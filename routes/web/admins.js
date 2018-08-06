@@ -55,12 +55,12 @@ router.get('/signup', redirectIfAuth, (req, res) => {
     req.flash('infoMsg', 'You cannot visit the admin signup page, get in touch with an admin first!');
     res.redirect('login');
 
-    console.log(`res.locals.message ${res.locals.message}`)
-    res.render('admins/signup', {
-        layout: 'reg-log-layout',
-        title: 'Admin',
-        // message: req.flash(message) 
-    });
+    // console.log(`res.locals.message ${res.locals.message}`)
+    // res.render('admins/signup', {
+    //     layout: 'reg-log-layout',
+    //     title: 'Admin',
+    //     // message: req.flash(message) 
+    // });
 });
 
 // process the signup form
