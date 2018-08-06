@@ -1,0 +1,40 @@
+{{#if success_messages}}
+    {{#each success_messages}}
+        <div class="alert alert-success">
+            <li class="list-group">{{this.msg}}</li>
+        </div>
+    {{/each}}
+{{/if}}
+
+{{#if error_messages}}
+    {{#each error_messages}}
+        <div class="alert alert-danger">        
+            <li class="list-group">{{this.msg}}</li>
+            {{!-- <li class="list-group">{{messages}}</li> --}}
+        </div>
+    {{/each}}
+{{/if}}
+
+{{#if errorMsg}}
+    <div class="alert alert-danger">        
+        <li class="list-group">{{errorMsg}}</li>
+    </div>
+{{/if}}
+
+{{#if successMsg}}
+    <div class="alert alert-success">        
+        <li class="list-group">{{successMsg}}</li>
+    </div>
+{{/if}}
+
+{{#if infoMsg}}
+    <div class="alert alert-info">        
+        <li class="list-group">{{infoMsg}}</li>
+    </div>
+{{/if}}
+
+{{#if warningMsg}}
+    <div class="alert alert-warning">        
+        <li class="list-group">{{warningMsg}}</li>
+    </div>
+{{/if}}
