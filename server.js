@@ -61,9 +61,9 @@ app.use(session({
     secret: 'some_random_generated_const_string',
     resave: true,
     saveUninitialized: true,
-    store: sessionStore.createSessionStore({
-        type: 'mongodb',
-    })
+    // store: sessionStore.createSessionStore({
+    //     type: 'mongodb',
+    // })
 }));
 
 //Express Flash and Messaging Middleware
