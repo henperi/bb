@@ -48,6 +48,8 @@ const app = express();
 //Define The Port
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
+const CONCURRENCY = process.env.WEB_CONCURRENCY || 1;
+
 
 console.log('port defined as:', PORT);
 //Set the static assets folder
@@ -59,9 +61,9 @@ app.use(session({
     secret: 'some_random_generated_const_string',
     resave: true,
     saveUninitialized: true,
-    // store: sessionStore.createSessionStore({
-    //     type: 'mongodb',
-    // })
+    store: sessionStore.createSessionStore({
+        type: 'mongodb',
+    })
 }));
 
 //Express Flash and Messaging Middleware
