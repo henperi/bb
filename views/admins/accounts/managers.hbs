@@ -49,12 +49,11 @@
 												<td>{{ this.mobile }}</td>
 												<td>{{ this.email }}</td>
 												<td>{{ this.role }}</td>
-												<td>{{this.wallets.[0].ballance}}</td>
+												<td>{{formatCash this.wallets.[0].ballance}}</td>
 												<td class="with-btn" nowrap>
 													<a href="#edit_{{this.mobile}}" class="btn btn-sm btn-primary width-60 m-r-2" data-toggle="modal">Fund</a>
 													<a href="admins/edit/{{this.role}}/{{this.email}}" class="btn btn-sm btn-info width-60 m-r-2">Edit</a>
 													<a href="javascript:;" class="btn btn-sm btn-warning width-60 m-r-2">Block</a>
-													<a href="javascript:;" class="btn btn-sm btn-danger width-60">Delete</a>
 												</td>
 												
 												<td>

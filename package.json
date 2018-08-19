@@ -4,12 +4,12 @@
   "description": "This is the Bewla web server for Admins as well as the API for the native/React App",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nf start"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Henry Izontimi",
   "license": "MIT",
   "dependencies": {
+    "async": "^2.6.1",
     "bcryptjs": "2.4.3",
     "body-parser": "1.18.3",
     "connect-flash": "0.1.1",

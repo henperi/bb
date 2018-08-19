@@ -1,0 +1,93 @@
+
+		<!-- begin #content -->
+		<div id="content" class="content">
+			<!-- begin breadcrumb -->
+			<ol class="breadcrumb pull-right">
+				<li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+				<li class="breadcrumb-item"><a href="javascript:;">Extra</a></li>
+				<li class="breadcrumb-item active">Search Results</li>
+			</ol>
+			<!-- end breadcrumb -->
+			<!-- begin page-header -->
+			<h1 class="page-header">Fund {{role}}
+                {{!-- <small>3 results found</small> --}}
+            </h1>
+			<!-- end page-header -->
+			
+			<!-- begin row -->
+			<div class="row">
+			    <!-- begin col-12 -->
+			    <div class="col-md-12">
+			    	<!-- begin result-container -->
+			        <div class="result-container">
+			        	<!-- begin input-group -->
+                        <form action="admins/fund/search/{{role}}" method="POST">
+                            <div class="input-group input-group-lg m-b-20">
+                                <input type="{{type}}" name="{{name}}" class="form-control input-white" 
+                                    placeholder="Enter {{name}} to find and fund {{role}}..." 
+                                    minlength="{{min}}" maxlength="{{max}}" required 
+                                />
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary"><i class="fa fa-search fa-fw"></i> Search</button>
+                                </div>
+                            </div>
+                        </form>
+                        <!-- end input-group -->
+                        <!-- begin result-list -->
+                        <div class="col-md-10">
+                            <ul class="result-list">
+                                {{> flash}}
+                                {{#if resultStatus}}
+                                <li>   
+                                    <div class="col-lg-9">
+                                        <h4 class="title"><a href="javascript:;">{{result.firstname}} {{result.lastname}} | {{result.mobile}}</a></h4>
+                                        <p class="location">{{result.role}}</p>
+                                        <form action="admins/fund/accounts/{{ this.result.role }}"  method="POST" class="margin-bottom-0">
+                                            <div class="form-group">
+                                                <label for="" class="h5">Enter Amount (&#8358;)</label>
+                                                <input type="number"  name="fund_amount" class="form-control" placeholder="Enter Amount" required >
+                                            </div>
+                                            <div class="form-group m-b-20 d-none">
+                                                <input type="float" name="com_to_admin" class="form-control form-control-lg" placeholder="Enter Commission, Default is 3% for users or 5% for agents" />
+                                                <input type="text" name="account_type" class="form-control form-control-lg" value="{{ result.role }}" />
+                                                <input type="text" name="wallet_id" class="form-control form-control-lg" value="{{ result.wallets.[0].wallet_id }}" />
+                                                <input type="text" name="u_id" class="form-control form-control-lg" value="{{ result._id }}" />
+                                            </div>
+
+                                            <div class="form-group m-b-20">
+                                                <label for="remember_checkbox">
+                                                    Type a remark for this funding (optional) 
+                                                </label>
+                                                <textarea name="remark" class="form-control form-control-lg" placeholder="Enter remark for this funds generation" rows="3"></textarea>
+                                            </div>
+                                            <div class="checkbox checkbox-css m-b-20">
+                                                <input type="checkbox" id="remember_checkbox" /> 
+                                                <label for="remember_checkbox">
+                                                    Acknowledge action 
+                                                </label>
+                                            </div>
+                                            <div class="login-buttons">
+                                                <button type="submit" class="btn btn-primary btn-block btn-lg">Fund {{result.firstname}} {{result.lastname}}</button>
+                                            </div>
+                                        </form> 
+
+                                    </div>
+                                    <div class="col-lg-3 result-price">
+                                        &#8358; {{formatCash result.wallets.[0].ballance}} <small class="text-uppercase">Current Ballance</small>
+                                        <a href="javascript:;" class="btn btn-secondary btn-block"> View Wallet History</a>
+                                        <a href="javascript:;" class="btn btn-yellow btn-block"> View User Details</a>
+                                    </div>
+                                </li>
+                                {{/if}}
+                            </ul>
+                        </div>
+                        <!-- end result-list -->
+                        
+                    </div>
+                    <!-- end result-container -->
+			    </div>
+			    <!-- end col-12 -->
+			</div>
+			<!-- end row -->
+		</div>
+		<!-- end #content -->

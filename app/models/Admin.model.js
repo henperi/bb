@@ -16,6 +16,35 @@ const adminSchema = mongoose.Schema({
         type: String,
         required: false
     },
+    passwordChanged: {
+        type: String,
+        required: true,
+        default: false,
+    },
+    personalData: {
+        birthday: {
+            type: String,
+            required: false
+        },
+        gender: {
+            type: String,
+            required: false
+        },
+    },
+    locationData: {
+        street: {
+            type: String,
+            required: false
+        },
+        city: {
+            type: String,
+            required: false
+        },
+        state: {
+            type: String,
+            required: false
+        },
+    },
     p_check: {
         type: String,
         required: false

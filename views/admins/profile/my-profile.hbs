@@ -1,0 +1,203 @@
+
+		<!-- begin #content -->
+		<div id="content" class="content content-full-width">
+			<!-- begin profile -->
+			<div class="profile">
+				<div class="profile-header">
+					<!-- BEGIN profile-header-cover -->
+					<div class="profile-header-cover"></div>
+					<!-- END profile-header-cover -->
+					<!-- BEGIN profile-header-content -->
+					<div class="profile-header-content">
+						<!-- BEGIN profile-header-img -->
+						<div class="profile-header-img">
+							<img src="../assets/img/user/user-14.jpg" alt="">
+						</div>
+						<!-- END profile-header-img -->
+						<!-- BEGIN profile-header-info -->
+						<div class="profile-header-info">
+							<h4 class="m-t-10 m-b-5">{{user.firstname}} {{user.lastname}}</h4>
+							<p class="m-b-10">{{user.role}}</p>
+							<a href="javascript:;" class="btn btn-xs btn-yellow">&#8358; {{adminWallet.ballance}}</a>
+						</div>
+						<!-- END profile-header-info -->
+					</div>
+					<!-- END profile-header-content -->
+					<!-- BEGIN profile-header-tab -->
+					<ul class="profile-header-tab nav nav-tabs">
+						<li class="nav-item"><a href="#profile-about" class="nav-link active" data-toggle="tab">ABOUT</a></li>
+						<li class="nav-item"><a href="#profile-photos" class="nav-link" data-toggle="tab">PHOTOS</a></li>
+						<li class="nav-item"><a href="#profile-password" class="nav-link" data-toggle="tab">PASSWORD</a></li>
+					</ul>
+					<!-- END profile-header-tab -->
+				</div>
+			</div>
+			<!-- end profile -->
+			<!-- begin profile-content -->
+            <div class="profile-content">
+            	<!-- begin tab-content -->
+            	<div class="tab-content p-0">
+            		<!-- begin #profile-about tab -->
+            		<div class="tab-pane fade show active" id="profile-about">
+                        
+						<!-- begin table -->
+						<div class="table-responsive">
+							<table class="table table-profile ">
+								
+								<tbody class="bg-white">
+									<tr class="divider">
+										<td colspan="2"></td>
+									</tr>
+                                    
+									<tr>
+										<td class="field">My Wallet Id</td>
+										<td><i class="fa fa-mobile"></i> {{user.mobile}} </td><br>
+                                        <h5>Cashout and Recieve Funds through your wallet Id</h5>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!-- end table -->
+
+                    	<!-- begin table -->
+						<div class="table-responsive">
+							<table class="table table-profile ">
+								
+								<tbody class="bg-white">
+									<tr class="divider">
+										<td colspan="2"></td>
+									</tr>
+                                    
+									<tr>
+										<td class="field">First Name</td>
+										<td><i class="fa fa-face"></i> {{user.firstname}} <a href="javascript:;" class="m-l-5">Edit</a></td>
+									</tr>
+									<tr>
+										<td class="field">Last Name</td>
+										<td><i class="fa fa-face"></i> {{user.lastname}} <a href="javascript:;" class="m-l-5">Edit</a></td>
+									</tr>
+									<tr>
+										<td class="field">Mobile</td>
+										<td><i class="fa fa-"></i> {{user.mobile}} <a href="javascript:;" class="m-l-5">Edit</a></td>
+									</tr>
+									
+									<tr>
+										<td class="field">Gender</td>
+										<td>
+											<select class="form-control input-inline input-xs" name="gender">
+												<option value="male">Male</option>
+												<option value="female">Female</option>
+											</select>
+										</td>
+									</tr>
+									<tr>
+										<td class="field">Birthdate</td>
+										<td>
+											<select class="form-control input-inline input-xs" name="day">
+												<option value="04" selected>04</option>
+											</select>
+											-
+											<select class="form-control input-inline input-xs" name="month">
+												<option value="11" selected>11</option>
+											</select>
+											-
+											<select class="form-control input-inline input-xs" name="year">
+												<option value="1989" selected>1989</option>
+											</select>
+										</td>
+									</tr>
+									<tr class="divider">
+										<td colspan="2"></td>
+									</tr>
+									<tr class="divider">
+										<td colspan="2"></td>
+									</tr>
+									
+									<tr class="divider">
+										<td colspan="2"></td>
+									</tr>
+									<tr class="highlight">
+										<td class="field">&nbsp;</td>
+										<td class="p-t-10 p-b-10">
+											<button type="submit" class="btn btn-primary p-l-30 p-r-30">Update</button>
+											<button type="submit" class="btn btn-white btn-white-without-border">Cancel</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!-- end table -->
+                        
+                        <!-- begin table -->
+						<div class="table-responsive">
+							<table class="table table-profile ">
+								
+								<tbody class="bg-white">
+									<tr class="divider">
+										<td colspan="2"></td>
+									</tr>
+									<tr>
+										<td class="field">Location</td>
+										<td><a href="javascript:;">Add Address</a></td>
+									</tr>
+									
+									<tr>
+										<td class="field">City</td>
+										<td>Los Angeles</td>
+									</tr>
+									<tr>
+										<td class="field">State</td>
+										<td>
+											<select class="form-control input-inline input-xs" name="region">
+												<option value="US" selected>United State</option>
+												<option value="AF">Afghanistan</option>
+												<option value="AL">Albania</option>
+												<option value="DZ">Algeria</option>
+												<option value="AS">American Samoa</option>
+												<option value="AD">Andorra</option>
+												<option value="AO">Angola</option>
+												<option value="AI">Anguilla</option>
+												<option value="AQ">Antarctica</option>
+												<option value="AG">Antigua and Barbuda</option>
+											</select>
+										</td>
+									</tr>
+									<tr class="divider">
+										<td colspan="2"></td>
+									</tr>
+									<tr class="highlight">
+										<td class="field">&nbsp;</td>
+										<td class="p-t-10 p-b-10">
+											<button type="submit" class="btn btn-primary p-l-30 p-r-30">Update</button>
+											<button type="submit" class="btn btn-white btn-white-without-border">Cancel</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!-- end table -->
+					</div>
+            		<!-- end #profile-about tab -->
+
+            		<!-- begin #profile-photos tab -->
+            		<div class="tab-pane fade in" id="profile-photos">
+            			<h4 class="m-t-0 m-b-20">My Photo</h4>
+						<!-- begin superbox -->
+						<!-- end superbox -->
+            		</div>
+            		<!-- end #profile-photos tab -->
+
+            		<!-- begin #profile-password tab -->
+            		<div class="tab-pane fade in" id="profile-password">
+            			<h4 class="m-t-0 m-b-20">Update Password</h4>
+            			<!-- begin row -->
+            			<!-- end row -->
+            		</div>
+            		<!-- end #profile-password tab -->
+
+				</div>
+            	<!-- end tab-content -->
+            </div>
+			<!-- end profile-content -->
+		</div>
+		<!-- end #content -->

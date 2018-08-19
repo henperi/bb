@@ -35,6 +35,7 @@
 						    <span>Dashboard</span>
 					    </a>
 					</li>
+					{{#if companyStaff}}
 					<li class="has-sub">
 						<a href="javascript:;">
 					        <b class="caret"></b>
@@ -49,6 +50,8 @@
 							{{/if}}
 						</ul>
 					</li>
+					{{/if}}
+					{{#if companyStaff}}
 					<li class="">
 						<a href="admins/accounts/create">
 							{{!-- <span class="badge pull-right">10</span> --}}
@@ -56,12 +59,19 @@
 							<span>Create Account</span>
 						</a>
 					</li>
-					<li class="">
+					{{/if}}
+					<li class="has-sub">
 						<a href="javascript:;">
 							{{!-- <span class="badge pull-right">10</span> --}}
 							<i class="fa fa-hdd"></i> 
 							<span>Fund Account</span>
 						</a>
+						<ul class="sub-menu">
+							{{#if companyStaff}}
+						    <li class="active"><a href="admins/fund/search/Admins">Fund Admins</a></li>
+							{{/if}}
+						    <li class="active"><a href="admins/fund/search/Users">Fund Users</a></li>
+						</ul>
 					</li>
 					<li class="">
 						<a href="javascript:;">
@@ -70,12 +80,19 @@
 							<span>Generate Report</span>
 						</a>
 					</li>
-					<li class="">
+					<li class="has-sub">
 						<a href="javascript:;">
-							{{!-- <span class="badge pull-right">10</span> --}}
-							<i class="fa fa-hdd"></i> 
-							<span>All Transactions</span>
+					        <b class="caret"></b>
+							<i class="fa fa-book"></i> 
+							<span>Transactions History</span>
 						</a>
+						<ul class="sub-menu">
+							{{#if mainAdmin}}
+						    <li class="active"><a href="admins/transactions/generated-funds">Generated Funds</a></li>
+							{{/if}}
+						    <li class="active"><a href="admins/transactions/received-funds">Recieved Funds</a></li>
+						    <li class="active"><a href="admins/transactions/sent-funds">Sent Funds</a></li>
+						</ul>
 					</li>
 			        <!-- begin sidebar minify button -->
 					<li><a href="javascript:;" class="sidebar-minify-btn" data-click="sidebar-minify"><i class="fa fa-angle-double-left"></i></a></li>
