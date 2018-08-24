@@ -1,0 +1,157 @@
+        <!-- begin #content -->
+		<div id="content" class="content">
+			<!-- begin breadcrumb -->
+			<ol class="breadcrumb pull-right">
+				<li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+				<li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
+				<li class="breadcrumb-item active">Dashboard v2</li>
+			</ol>
+			<!-- end breadcrumb -->
+			<!-- begin page-header -->
+			<h1 class="page-header">{{user.role}}'s Dashboard</small></h1>{{admin.firstname}}
+			{{> flash}}
+			<!-- end page-header -->
+			<!-- begin row -->
+			<div class="row">
+
+				
+			    <!-- begin col-3 -->
+				
+			    <div class="col-lg-4 col-md-6">
+			        <div class="widget widget-stats bg-gradient-teal">
+						<div class="stats-icon stats-icon-lg"><i class="fa fa-globe fa-fw"></i></div>
+			        	<div class="stats-content">
+							<div class="stats-title">RECEIVED COMMISSIONS</div><span class="capped"></span>
+							<div class="stats-number"> &#8358; {{commissionsWallet.ballance}}</div>
+							
+						</div>
+			        </div>
+			    </div>
+				
+			    <!-- end col-3 -->
+				
+			</div>
+			<!-- end row -->
+
+			<div class="row">
+				
+			</div>
+			
+			<!-- begin row -->
+			<div class="row">
+				<div class="col-lg-6">
+					<div class="panel panel-inverse" data-sortable-id="ui-widget-2">
+						<div class="panel-heading ui-sortable-handle">
+							<h4 class="panel-title">Charge On Agents Settings</h4>
+						</div>
+						<div class="panel-body">
+                            <form action="javascript:;" method="POST" class="margin-bottom-0">
+                                <h4>Charge on Agents</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group  m-b-20">
+                                            <label for="remember_checkbox">
+                                                Percentage(%) Charge on Agent 
+                                            </label>
+                                            <input type="text" name="percentChargeOnAdmins" class="form-control input-percent-agent" value="{{ commissionsData.on_agent.percent }}" placeholder="Enter Amount" required />
+                                            <span class="text-danger percent-error-agent"> </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group  m-b-20">
+                                            <label for="remember_checkbox">
+                                                Cap/Limit on Agent(&#8358;)
+                                            </label>
+                                            <input type="text" name="cappedChaargeOnAdmins" class="form-control input-capped-agent" value="{{ commissionsData.on_agent.capped }}" placeholder="Enter Amount" required />
+                                            <span class="text-danger capped-error-agent"> </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12">
+                                    <h4>Description</h4>
+
+                                    <div class="col-xs-12">
+                                        <h5 class="m-b-0">1. When Admin funds Agent</h5>
+                                        <p class="text-dark">When a <strong>Company Staff (Main-Admin/Manager)</strong> funds an Agent a 
+                                            <strong><span class="percentChargeOnAgent">{{ commissionsData.on_agent.percent }}</span></strong>% commission capped at 
+                                            <strong>&#8358;<span class="cappedChargeOnAgent">{{ commissionsData.on_agent.capped }}</span></strong> will be charged on the Agent and added to the
+                                            <strong>Company Staff's</strong> ballance.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="login-buttons">
+                                    <button type="submit" class="btn btn-success btn-block btn-lg">Update Agent Commission Charges</button>
+                                </div>
+                            </form>
+						</div>
+						<div class="hljs-wrapper">
+						
+						</div>
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="panel panel-inverse" data-sortable-id="ui-widget-2">
+						<div class="panel-heading ui-sortable-handle">
+							<h4 class="panel-title">Charge On Users Settings</h4>
+						</div>
+						<div class="panel-body">
+                            <form action="javascript:;" method="POST" class="margin-bottom-0">
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group  m-b-20">
+                                            <label for="remember_checkbox">
+                                                Percentage Charge(%) on Users
+                                            </label>
+                                            <input type="text" name="percentCharge" class="form-control input-percent" value="{{ commissionsData.standard.percent }}" placeholder="Enter Amount" required />
+                                            <span class="text-danger percent-error"> </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group  m-b-20">
+                                            <label for="remember_checkbox">
+                                                Cap/Limit (&#8358;) on Users
+                                            </label>
+                                            <input type="text" name="cappedChaarge" class="form-control input-capped" value="{{ commissionsData.standard.capped }}" placeholder="Enter Amount" required />
+                                            <span class="text-danger capped-error"> </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12">
+                                    <h4>Description</h4>
+
+                                    <div class="col-xs-12">
+                                        <h5 class="m-b-0">1. When Admin funds User</h5>
+                                        <p class="text-dark">When a <strong>Company Staff(Main-Admin or Manager)</strong> funds a User a 
+                                            <strong><span class="percentCharge">{{ commissionsData.standard.percent }}</span></strong>% commission capped at 
+                                            <strong>&#8358;<span class="cappedCharge">{{ commissionsData.standard.capped }}</span></strong> will be charged on the User and added to the
+                                            <strong>Company Staff's</strong> ballance.
+                                        </p>
+                                    </div>
+
+                                    <div class="col-xs-12">
+                                        <h5 class="m-b-0">2. When Agent funds User</h5>
+                                        <p class="text-dark">When an <strong>Agent</strong> funds a User a 
+                                            <strong><span class="percentCharge">{{ commissionsData.standard.percent }}</span></strong>% commission capped at 
+                                            <strong>&#8358;<span class="cappedCharge">{{ commissionsData.standard.capped }}</span></strong> will be charged on the User.
+                                            <strong>60%</strong> of this commission will be added to Bewla's <strong>Main Admin's</strong> ballance while 
+                                            <strong>40%</strong> will be added to the <strong>Agent's</strong> ballance.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="login-buttons">
+                                    <button type="submit" class="btn btn-success btn-block btn-lg">Update User Commission Charges</button>
+                                </div>
+                            </form>
+						</div>
+						<div class="hljs-wrapper">
+						
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- end row -->
+		</div>
+		<!-- end #content -->
+
+		

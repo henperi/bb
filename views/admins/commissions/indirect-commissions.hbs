@@ -22,7 +22,7 @@
 					<div class="panel panel-inverse" data-sortable-id="ui-widget-2">
 						<div class="panel-heading ui-sortable-handle">
 							
-							<h4 class="panel-title">Sent Funds History</h4>
+							<h4 class="panel-title">Indirect Commissions Recieved For Funding Users</h4>
 						</div>
 						<div class="panel-body">
                         	<!-- begin table-responsive -->
@@ -31,24 +31,24 @@
 									<thead>
 										<tr>
 											{{!-- <th>#</th> --}}
-											<th>Amount</th>
-											<th>Sent To</th>
-											<th>Received Commission</th>
-											<th>Receiver Type</th>
+											<th>Commission Earned</th>
+											<th>Transaction Amount</th>
+											<th>Transaction Type</th>
+											<th>From</th>
+											<th>To</th>
 											<th>Date</th>
-											<th>Remark</th>
 										</tr>
 									</thead>
 									<tbody>
-										{{#each sentFunds }}
+										{{#each directCommission }}
 											<tr>
                                                 {{!-- <td></td> --}}
-												<td>&#8358;{{formatCash  this.amount }}</td>
-												<td>{{this.receiver_name}} <b>({{ this.receiver_wallet_id }})</b></td>
-												<td>&#8358;{{this.commission }}</td>
-												<td>{{this.receiver_role }}</td>
+												<td>&#8358;{{  this.commissionsData.com_received_by_admin.amount }}</td>
+												<td>&#8358;{{  this.foundingData.fund_amount }}</b></td>
+												<td>{{  this.foundingData.fund_type }}</td>
+												<td>{{  this.foundingData.fund_sender.sender_name }} <b>({{  this.foundingData.fund_sender.sender_wallet_id }})</b></td>
+												<td>{{  this.foundingData.fund_receiver.receiver_name }} <b>({{  this.foundingData.fund_receiver.receiver_wallet_id }})</b></td>
 												<td>{{formatDate this.createdAt }}</td>
-												<td>{{ this.remark }}</td>
 											</tr>											
 										{{/each}}
 									</tbody>

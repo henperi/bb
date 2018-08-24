@@ -100,6 +100,100 @@
     		});
 		});
 	</script>
+
+	
+	<script>
+		$(document).ready(function() {
+			
+			/*
+			|Users
+			!==============================================================! 
+			*/
+			const inputPercent = document.querySelector('.input-percent');
+			const inputCapped = document.querySelector('.input-capped');
+			
+			const percentCharge = document.querySelectorAll('.percentCharge');
+			const cappedCharge = document.querySelectorAll('.cappedCharge');
+
+			const percentError = document.querySelector('.percent-error');
+			const cappedError = document.querySelector('.capped-error');
+			
+			inputPercent.addEventListener('keyup', () => {
+				percentValue = inputPercent.value;
+				percentError.innerHTML = ''
+
+				if(percentValue.length == 0) {
+					percentError.innerHTML = `Field can't be empty, input a number`
+				}
+				else if(!isNaN(percentValue)) {
+					percentCharge[0].innerHTML = percentValue
+					percentCharge[1].innerHTML = percentValue
+				} else {
+					percentError.innerHTML = 'Please enter a valid number'
+				}
+			})
+
+			inputCapped.addEventListener('keyup', () => {
+				cappedValue = inputCapped.value;
+				cappedError.innerHTML = ''
+				
+				if(cappedValue.length == 0) {
+					cappedError.innerHTML = `Field can't be empty, input a number`
+				}
+				else if(!isNaN(cappedValue)) {
+					cappedCharge[0].innerHTML = cappedValue
+					cappedCharge[1].innerHTML = cappedValue
+				} else {
+					cappedError.innerHTML = 'Please enter a valid number'
+				}
+			})
+
+			/*
+			|Agents
+			!==============================================================! 
+			*/
+			const inputPercentAgent = document.querySelector('.input-percent-agent');
+			const inputCappedAgent = document.querySelector('.input-capped-agent');
+			
+			const percentChargeAgent = document.querySelector('.percentChargeOnAgent');
+			const cappedChargeAgent = document.querySelector('.cappedChargeOnAgent');
+
+			const percentErrorAgent = document.querySelector('.percent-error-agent');
+			const cappedErrorAgent = document.querySelector('.capped-error-agent');
+			
+			
+			inputPercentAgent.addEventListener('keyup', () => {
+				percentValueAgent = inputPercentAgent.value;
+				percentErrorAgent.innerHTML = ''
+
+				
+				if(percentValueAgent.length == 0) {
+					percentErrorAgent.innerHTML = `Field can't be empty, input a number`
+				}
+				else if(!isNaN(percentValueAgent)) {
+					percentChargeAgent.innerHTML = percentValueAgent
+				} else {
+					percentErrorAgent.innerHTML = 'Please enter a valid number'
+				}
+			})
+
+			inputCappedAgent.addEventListener('keyup', () => {
+				cappedValueAgent = inputCappedAgent.value;
+				cappedErrorAgent.innerHTML = ''
+				
+				if(cappedValueAgent.length == 0) {
+					cappedErrorAgent.innerHTML = `Field can't be empty, input a number`
+				}
+				else if(!isNaN(cappedValueAgent)) {
+					cappedChargeAgent.innerHTML = cappedValueAgent
+				} else {
+					cappedErrorAgent.innerHTML = 'Please enter a valid number'
+				}
+			})
+			
+
+		});
+	</script>
 	
 </body>
 </html>

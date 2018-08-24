@@ -11,7 +11,7 @@ const userSchema = mongoose.Schema({
     mobile: String,
     email: String,
     password: String,
-    account_type: String,
+    role: String,
     created_by: {
         type: String,
         required: false

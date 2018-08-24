@@ -8,6 +8,9 @@ const Admin =  require('../../app/models/Admin.model');
 const AdminWallet =  require('../../app/models/AdminWallet.model');
 const GenFundsHistory =  require('../../app/models/GenFundsHistory.model');
 const SendFundsHistory =  require('../../app/models/SendFundsHistory.model');
+const CommissionSettings =  require('../../app/models/CommissionSettings.model');
+const AdminCommissionHistory =  require('../../app/models/AdminCommissionHistory.model');
+const AgentCommissionHistory =  require('../../app/models/AgentCommissionHistory.model');
 
 //Bring in the User Model
 const User = require('../../app/models/User.model');
@@ -15,9 +18,12 @@ const UserWallet = require('../../app/models/UserWallet.model');
 
 const bcrypt = require('bcryptjs')
 
-const adminCreateAccounts = require('../../app/controllers/adminControllers/adminCreateAccount.controller')
+// const adminCreateAccounts = require('../../app/controllers/adminControllers/adminCreateAccount.controller')
 
 const async = require('async');
+
+
+
 /*
 |=======================================================================================
 |ADMIN LOGIN
@@ -62,9 +68,6 @@ router.get('/logout', (req, res) => {
 router.get('/signup', redirectIfAuth, (req, res) => {
     res.locals.message = req.flash('message');
     
-    // req.flash('infoMsg', 'You cannot visit the admin signup page, get in touch with an admin first!');
-    // res.redirect('login');
-
     console.log(`res.locals.message ${res.locals.message}`)
     res.render('admins/signup', {
         layout: 'reg-log-layout',
@@ -122,36 +125,48 @@ router.post('/signup', (req, res) => {
                         res.redirect('signup');
                     } else {
                         console.log("checking for mobile:" +mobile);
-                        let newAdmin = new Admin({
-                            firstname: firstname,
-                            lastname: lastname, 
-                            mobile: mobile, 
-                            email: email, 
-                            role: "Super-Admin", 
-                            password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
-                            p_check: password
-                        });
 
-                        newAdmin.save( (err, registeredAdmin) => {
-                            if(err) throw err;
-                            else {
-                                console.log(`Admin saved to the database ${registeredAdmin}`);
+                        Admin.findOne({}, (err, result) => {
+                            if(err) return next(err);
+                            else if(result.length > 0) {
+                                req.flash('errorMsg', 'Unable to register, please contact an admin');
+                                res.redirect('back');
+                            } else {
 
-                                let newAdminWallet = new AdminWallet({
-                                    wallet_id: mobile,
-                                    user_id: registeredAdmin._id, 
+                                let newAdmin = new Admin({
+                                    firstname: firstname,
+                                    lastname: lastname, 
+                                    mobile: mobile, 
+                                    email: email, 
+                                    role: "Super-Admin", 
+                                    password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
+                                    p_check: password
                                 });
-                                newAdminWallet.save( (err, registerdWallet) => {
+
+                                newAdmin.save( (err, registeredAdmin) => {
                                     if(err) throw err;
                                     else {
-                                        console.log(`AdminWallet saved to the database ${registerdWallet}`);
+                                        console.log(`Admin saved to the database ${registeredAdmin}`);
+        
+                                        let newAdminWallet = new AdminWallet({
+                                            wallet_id: mobile,
+                                            user_id: registeredAdmin._id, 
+                                        });
+                                        newAdminWallet.save( (err, registerdWallet) => {
+                                            if(err) throw err;
+                                            else {
+                                                console.log(`AdminWallet saved to the database ${registerdWallet}`);
+                                            }
+                                        })
+        
+                                        req.flash('successMsg', 'You have registered successfully, Login to your account now');
+                                        res.redirect('login');
                                     }
-                                })
+                                });
 
-                                req.flash('successMsg', 'You have registered successfully, Login to your account now');
-                                res.redirect('login');
                             }
-                        });
+                        })
+
 
                     }
                 })
@@ -163,7 +178,7 @@ router.post('/signup', (req, res) => {
 
 /*
 |================================================
-|Some default settings for the rest controllers
+|Some default settings for all the routes
 |================================================
 |
 */
@@ -199,7 +214,7 @@ router.all('*', (req, res, next) => {
             }
         }
 
-        console.log('req.helpers::::', req.helpers)
+        // console.log('req.helpers::::', req.helpers)
     }
     
     next();
@@ -242,23 +257,30 @@ router.get('/dashboard', ensureAuth, (req, res, next) => {
                 ])
                 .sort({_id: -1})
                 .exec(callback)
-            }            
+            },
+            
+            commissionsData: (callback) => {
+                CommissionSettings.findOne({}).exec(callback);
+            }
+
         }, (err, results) => {
             if(err) return next(err)
             else {
-                // console.log(usersData);
-                // console.log(usersData[0].wallets[0].wallet_status); usersData.[0].wallets.[0].ballance
+                                
                 res.render('admins/dashboard', {
                     adminWallet: results.adminWallet,
                     mainAdmin: req.mainAdmin,
                     companyStaff: req.companyStaff,
                     usersData: results.usersData,
+                    commissionsData: results.commissionsData,
                     helpers: req.helpers
-                });  
+                });
+
             }
         })       
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 
 });
@@ -284,7 +306,7 @@ router.get('/accounts/users', ensureAuth, (req, res, next) => {
             
             usersData: (callback) => {
                 User.aggregate([
-                    { $match: { account_type: "User" } },
+                    { $match: { role: "User" } },
                     {
                         $lookup: {
                             from: "userwallets",
@@ -313,7 +335,8 @@ router.get('/accounts/users', ensureAuth, (req, res, next) => {
             }
         })       
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
@@ -361,7 +384,8 @@ router.get('/accounts/agents', ensureAuth, (req, res) => {
         }) 
              
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
@@ -408,7 +432,8 @@ router.get('/accounts/managers', ensureAuth, (req, res) => {
             }
         })      
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
@@ -452,7 +477,8 @@ router.get('/accounts/create', ensureAuth, (req, res, next) => {
         })
 
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
@@ -466,9 +492,9 @@ router.post('/accounts/create', ensureAuth, createAdmin)
 |================================================
 |
 */
+//search an account to fund using role as a param and email or mobile as the query string
 router.get('/fund/search/:role', ensureAuth, (req, res) => {
-    
-    // console.log(req.params.role);
+      
     let type, name, min, max;
     if(req.params.role == 'Admins') {
         type = 'email';
@@ -479,176 +505,169 @@ router.get('/fund/search/:role', ensureAuth, (req, res) => {
         min = '11';
         max = '11'
     }
-    
-    if(req.user.role == 'Super-Admin' || req.user.role == 'Manager' || req.user.role == 'Agent' || req.user.role == 'Admin'){
+
+    console.log('params:', req.query.email)
+    if(req.params.role != 'Users' && req.params.role != 'Admins') {
+        req.flash('warningMsg', 'Invalid Search Type')
+        res.redirect('/admins/fund/search/Users')
+    }
+    else if(req.user.role == 'Super-Admin' || req.user.role == 'Manager' || req.user.role == 'Agent' || req.user.role == 'Admin'){
+        
+
         AdminWallet.findOne({
             'wallet_id': req.user.mobile,
             'user_id': req.user._id
         }, (err, adminWallet) => {
             if(err) return next(err)
             else {
-                res.render('admins/fund/search', {
-                    adminWallet: adminWallet,
-                    mainAdmin: req.mainAdmin,
-                    companyStaff: req.companyStaff,
-                    role: req.params.role,
-                    type: type,
-                    name: name,
-                    min: min,
-                    max: max,
-                    helpers: req.helpers
-                });  
+                // console.log('params:', req.params.email)
+                if(req.query.email) {
+                    // req.checkBody('email', 'admin email is required').notEmpty();
+                    req.checkQuery('email', 'Email is not valid').isEmail();
+                    let errors = req.validationErrors();
                     
-            }
-        });        
-    } else {
-        res.send("Invalid Access")
-    }
-})
-
-
-router.post('/fund/search/:role', ensureAuth, (req, res) => {
+                    const email = req.query.email.toLowerCase();
+                    
+                    if(errors){
+                        console.log(`Validation Errors: ${JSON.stringify(errors)}`);
+                        req.flash('error', errors);
+                        res.redirect('signup');
+                    } else {
+                        Admin.findOne({
+                            
+                            email: email,
     
-    // console.log(req.params.role);
-    let type, name, min, max;
-    if(req.params.role == 'Admins') {
-        type = 'email';
-        name = 'email';
-    } else if(req.params.role == 'Users') {
-        type = 'tel';
-        name = 'mobile';
-        min = '11';
-        max = '11'
-    }
+                        }, (err, foundAdmin) => {
+                            
+                            if(err) return next(err)
+                            
+                            else {
+                                console.log('foundAdmin', foundAdmin)
+                                if(!foundAdmin) {
+                                    req.flash('warningMsg', 'This Admin email was not found Try again')
+                                    res.redirect(`/admins/fund/search/${req.params.role}`)
+                                } else {
     
-    if(req.user.role == 'Super-Admin' || req.user.role == 'Manager' || req.user.role == 'Agent' || req.user.role == 'Admin'){
-       
-        AdminWallet.findOne({
-            'wallet_id': req.user.mobile,
-            'user_id': req.user._id
-        }, (err, adminWallet) => {
-            if(err) return next(err)
-            else {
-                console.log(req.body.email)
-                // res.send('funAdmins')
-                if(req.body.email) {
-                    req.checkBody('email', 'admin email is required').notEmpty();
-                    req.checkBody('email', 'Email is not valid').isEmail();
-                                    
-                    const email = req.body.email.toLowerCase();
-
-                    Admin.findOne({
-                        
-                        email: email,
-
-                    }, (err, foundAdmin) => {
-                        
-                        if(err) return next(err)
-                        
-                        else {
-                            console.log('foundAdmin', foundAdmin)
-                            if(!foundAdmin) {
-                                req.flash('warningMsg', 'This Admin email was not found Try again')
-                                res.redirect(`/admins/fund/search/${req.params.role}`)
-                            } else {
-
-                                Admin.aggregate([
-                                    { $match: { mobile: foundAdmin.mobile }},
-                                    {
-                                        $lookup: {
-                                            from: "adminwallets",
-                                            localField: "mobile",
-                                            foreignField: "wallet_id",
-                                            as: "wallets"
+                                    Admin.aggregate([
+                                        { $match: { mobile: foundAdmin.mobile }},
+                                        {
+                                            $lookup: {
+                                                from: "adminwallets",
+                                                localField: "mobile",
+                                                foreignField: "wallet_id",
+                                                as: "wallets"
+                                            }
                                         }
-                                    }
-                                ], (err, result) => {
-                                    if(err) return next(err)
-                                    else {
-                                        console.log('result', result[0])
-                                        if(!result) {
-                                            req.flash('warningMsg', 'This Admin wallet was not found Try again')
-                                            res.redirect(`/admins/fund/search/${req.params.role}`)
-                                        } else {
-                                            // console.log('adminWallet', adminWallet)
-                                            
-                                            resultStatus = true
-                                            res.render('admins/fund/search', {
-                                                adminWallet: adminWallet,
-                                                mainAdmin: req.mainAdmin,
-                                                companyStaff: req.companyStaff,
-                                                role: req.params.role,
-                                                type: type,
-                                                name: name,
-                                                min: min,
-                                                max: max,
-                                                result: result[0],
-                                                resultStatus: resultStatus,
-                                                helpers: req.helpers
-                                            });  
+                                    ], (err, result) => {
+                                        if(err) return next(err)
+                                        else {
+                                            console.log('result', result[0])
+                                            if(!result) {
+                                                req.flash('warningMsg', 'This Admin wallet was not found Try again')
+                                                res.redirect(`/admins/fund/search/${req.params.role}`)
+                                            } else {
+                                                // console.log('adminWallet', adminWallet)
+                                                
+                                                resultStatus = true
+                                                res.render('admins/fund/search', {
+                                                    adminWallet: adminWallet,
+                                                    mainAdmin: req.mainAdmin,
+                                                    companyStaff: req.companyStaff,
+                                                    role: req.params.role,
+                                                    type: type,
+                                                    name: name,
+                                                    min: min,
+                                                    max: max,
+                                                    result: result[0],
+                                                    resultStatus: resultStatus,
+                                                    helpers: req.helpers
+                                                });  
+                                            }
                                         }
-                                    }
-                                })
+                                    })
+                                }
                             }
-                        }
-                    })
+                        })
+                    }
                     
                 }
                 
-                else if(req.body.mobile) {
-                    req.checkBody('mobile', 'admin mobile is required').notEmpty();
-                                    
-                    const mobile = req.body.mobile;
+                else if(req.query.mobile) {
+                    req.checkQuery('mobile', 'admin mobile is required').notEmpty();
+                    let errors = req.validationErrors();
+                                  
+                    const mobile = req.query.mobile;
                     
+                    
+                    if(errors){
+                        console.log(`Validation Errors: ${JSON.stringify(errors)}`);
+                        req.flash('error', errors);
+                        res.redirect('signup');
+                    } else {
+                        
+                        User.aggregate([
+                            {$match: { mobile: mobile } },
+                            {
+                                $lookup: {
+                                    from: "userwallets",
+                                    localField: "mobile",
+                                    foreignField: "wallet_id",
+                                    as: "wallets"
+                                }
+                            }
+                        ], (err, result) => {
+                            if(err) return next(err)
+                            else {
+                                console.log('result', result[0])
+                                if(!result[0]) {
+                                    req.flash('warningMsg', 'No user with this wallet id or mobile was found, try again')
+                                    res.redirect(`/admins/fund/search/${req.params.role}`)
+                                } else {
+                                    // console.log('adminWallet', adminWallet)
+                                    
+                                    resultStatus = true
+                                    res.render('admins/fund/search', {
+                                        adminWallet: adminWallet,
+                                        mainAdmin: req.mainAdmin,
+                                        companyStaff: req.companyStaff,
+                                        role: req.params.role,
+                                        type: type,
+                                        name: name,
+                                        min: min,
+                                        max: max,
+                                        result: result[0],
+                                        resultStatus: resultStatus,
+                                        helpers: req.helpers
+                                    });  
+                                }
+                            }
+                        })
+                    }
 
-                    User.aggregate([
-                        {$match: { mobile: mobile } },
-                        {
-                            $lookup: {
-                                from: "userwallets",
-                                localField: "mobile",
-                                foreignField: "wallet_id",
-                                as: "wallets"
-                            }
-                        }
-                    ], (err, result) => {
-                        if(err) return next(err)
-                        else {
-                            console.log('result', result[0])
-                            if(!result[0]) {
-                                req.flash('warningMsg', 'No user with this wallet id or mobile was found, try again')
-                                res.redirect(`/admins/fund/search/${req.params.role}`)
-                            } else {
-                                // console.log('adminWallet', adminWallet)
-                                
-                                resultStatus = true
-                                res.render('admins/fund/search', {
-                                    adminWallet: adminWallet,
-                                    mainAdmin: req.mainAdmin,
-                                    companyStaff: req.companyStaff,
-                                    role: req.params.role,
-                                    type: type,
-                                    name: name,
-                                    min: min,
-                                    max: max,
-                                    result: result[0],
-                                    resultStatus: resultStatus,
-                                    helpers: req.helpers
-                                });  
-                            }
-                        }
-                    })
                     
                 }
-                    
-                // res.send('admins/profile/my-profile')
+                else {
+                    res.render('admins/fund/search', {
+                        adminWallet: adminWallet,
+                        mainAdmin: req.mainAdmin,
+                        companyStaff: req.companyStaff,
+                        role: req.params.role,
+                        type: type,
+                        name: name,
+                        min: min,
+                        max: max,
+                        helpers: req.helpers
+                    });                    
+                }
             }
         });        
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
+//post request to fund any account type
 router.post('/fund/accounts/:account_type', ensureAuth, fundAnyAccount)
 
 
@@ -702,11 +721,12 @@ router.get('/transactions/generated-funds', ensureAuth, (req, res, next) => {
         });
 
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
-router.get('/transactions/sent-funds', ensureAuth, (req, res) => {
+router.get('/transactions/sent-funds', ensureAuth, (req, res, next) => {
     // console.log(`transactions/generated-funds`) 
     
     if(req.user.role == 'Super-Admin' || req.user.role == 'Manager' || req.user.role == 'Agent'){
@@ -734,11 +754,12 @@ router.get('/transactions/sent-funds', ensureAuth, (req, res) => {
             }
         });        
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
-router.get('/transactions/received-funds', ensureAuth, (req, res) => {
+router.get('/transactions/received-funds', ensureAuth, (req, res, next) => {
     // console.log(`transactions/generated-funds`) 
     
     if(req.user.role == 'Super-Admin' || req.user.role == 'Manager' || req.user.role == 'Agent'){
@@ -771,7 +792,8 @@ router.get('/transactions/received-funds', ensureAuth, (req, res) => {
         })
       
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
 
@@ -782,7 +804,7 @@ router.get('/transactions/received-funds', ensureAuth, (req, res) => {
 |================================================
 |
 */
-router.get('/profile/my-profile', ensureAuth, (req, res) => {
+router.get('/profile/my-profile', ensureAuth, (req, res, next) => {
     
     if(req.user.role == 'Super-Admin' || req.user.role == 'Manager' || req.user.role == 'Agent' || req.user.role == 'Admin'){
         AdminWallet.findOne({
@@ -800,13 +822,152 @@ router.get('/profile/my-profile', ensureAuth, (req, res) => {
                     helpers: req.helpers
                 });  
                     
-                // res.send('admins/profile/my-profile')
             }
         });        
     } else {
-        res.send("Invalid Access")
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
     }
 })
+
+
+/*
+|================================================
+|Commissions router
+|================================================
+|
+*/
+router.get('/commissions/direct-commissions', ensureAuth, (req, res, next) => {
+        
+    if(req.user.role == 'Super-Admin' || req.user.role == 'Manager'){
+        AdminWallet.findOne({
+            'wallet_id': req.user.mobile,
+            'user_id': req.user._id
+        }, (err, adminWallet) => {
+            if(err) return next(err)
+            else {
+                
+                AdminCommissionHistory.find(
+                    {"commissionsData.received_by": req.user._id})
+                    .sort({_id: -1})
+                    .exec( (err, directCommission) => {
+                    if(err) return next(err);
+                    else {
+                        console.log(`directCommission: ${directCommission}`)
+                        
+                        res.render('admins/commissions/direct-commissions', {
+                            adminWallet: adminWallet,
+                            directCommission: directCommission,
+                            helpers: req.helpers         
+                        })
+                    }
+                })                
+            }
+        });        
+    } else {
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
+    }
+})
+
+router.get('/commissions/indirect-commissions', ensureAuth, (req, res, next) => {
+        
+    if(req.user.role == 'Super-Admin'){
+        AdminWallet.findOne({
+            'wallet_id': req.user.mobile,
+            'user_id': req.user._id
+        }, (err, adminWallet) => {
+            if(err) return next(err)
+            else {
+                
+                AgentCommissionHistory.find(
+                    {"commissionsData.com_received_by_admin.received_by": req.user._id})
+                    .sort({_id: -1})
+                    .exec( (err, directCommission) => {
+                    if(err) return next(err);
+                    else {
+                        console.log(`directCommission: ${directCommission}`)
+                        
+                        res.render('admins/commissions/indirect-commissions', {
+                            adminWallet: adminWallet,
+                            directCommission: directCommission,
+                            helpers: req.helpers         
+                        })
+                    }
+                })                
+            }
+        });        
+    } else {
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
+    }
+})
+
+//for agents
+router.get('/commissions/received-commissions', ensureAuth, (req, res, next) => {
+        
+    if(req.user.role == 'Agent'){
+        AdminWallet.findOne({
+            'wallet_id': req.user.mobile,
+            'user_id': req.user._id
+        }, (err, adminWallet) => {
+            if(err) return next(err)
+            else {
+                
+                AgentCommissionHistory.find(
+                    {"commissionsData.com_received_by_agent.received_by": req.user._id})
+                    .sort({_id: -1})
+                    .exec( (err, directCommission) => {
+                    if(err) return next(err);
+                    else {
+                        console.log(`directCommission: ${directCommission}`)
+                        
+                        res.render('admins/commissions/received-commissions', {
+                            adminWallet: adminWallet,
+                            directCommission: directCommission,
+                            helpers: req.helpers         
+                        })
+                    }
+                })                
+            }
+        });        
+    } else {
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
+    }
+})
+
+router.get('/commissions/commissions-settings', ensureAuth, (req, res, next) => {
+        
+    if(req.user.role == 'Super-Admin'){
+        AdminWallet.findOne({
+            'wallet_id': req.user.mobile,
+            'user_id': req.user._id
+        }, (err, adminWallet) => {
+            if(err) return next(err)
+            else {
+                
+                CommissionSettings.find({})
+                    .exec( (err, commissionSettings) => {
+                    if(err) return next(err);
+                    else {
+                        console.log(`directCommission: ${commissionSettings}`)
+                        
+                        res.render('admins/commissions/commissions-settings', {
+                            adminWallet: adminWallet,
+                            commissionSettings: commissionSettings,
+                            helpers: req.helpers         
+                        })
+                    }
+                })                
+            }
+        });        
+    } else {
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
+    }
+})
+
 
 
 
@@ -815,7 +976,7 @@ router.get('/profile/my-profile', ensureAuth, (req, res) => {
 |// adminCreateAccount.controller Starts 
 |=======================================================================================================
 */
-function createAdmin(req, res) {
+function createAdmin(req, res, next) {
     console.log("loging userData" +req.body.firstname, req.body.lastname, req.body.mobile, req.body.email, req.body.password);
 
     req.checkBody('firstname', 'Firstname is required').notEmpty();
@@ -831,7 +992,7 @@ function createAdmin(req, res) {
     if(errors){
         console.log(`Validation Errors: ${JSON.stringify(errors)}`);
         req.flash('error', errors);
-        res.redirect('create');
+        res.redirect('back');
     } else {
 
         const firstname = req.body.firstname;
@@ -843,27 +1004,99 @@ function createAdmin(req, res) {
 
         emailQuery = {email: email};
         
+        if(account_type == 'User') {
+            if(req.user.role != 'Super-Admin' && req.user.role != 'Manager'){
+                req.flash('errorMsg', `You don't have priviledges to create a ${account_type} account`);
+                res.redirect('back');
+            } else {
+
+                User.findOne(emailQuery, (err, admin_email) => {
+                    if(err) {
+                        return next(err)
+                    }
+                    if(admin_email){
+                        console.log(`This user email exists already: ${admin_email}`);
+                        req.flash('errorMsg', 'This agent email has been taken');
+                        res.redirect('back');
+                    } else {
+                        mobileQuery = {mobile: mobile};
+                        User.findOne(mobileQuery, (err, admin_mobile) => {
+                            if(err) {
+                                return next(err)
+                            }
+                            
+                            if(admin_mobile){
+                                console.log(`This user mobile exists already: ${admin_mobile}`);
+                                req.flash('errorMsg', 'This agent mobile has been taken');
+                                res.redirect('back');
+                            } else {
+                                
+                                const newUser = new User({
+                                    firstname: firstname,
+                                    lastname: lastname, 
+                                    mobile: mobile, 
+                                    email: email, 
+                                    role: account_type,
+                                    created_by: req.user._id,
+                                    password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
+                                    p_check: password
+                                });
+        
+                                newUser.save( (err, registeredAdmin) => {
+                                    if(err){
+                                        return next(err)
+                                    } else {
+                                        console.log(`User saved to the database ${registeredAdmin.firstname}`);
+        
+                                        let newUserWallet = new UserWallet({
+                                            wallet_id: mobile,
+                                            user_id: registeredAdmin._id,
+                                            wallet_type: account_type 
+                                        });
+        
+                                        newUserWallet.save( (err, registerdWallet) => {
+                                            if(err) return next(err);
+                                            else {
+                                                console.log(`UserWallet saved to the database ${registerdWallet.wallet_id}`);
+                                            }
+                                        });
+                                        
+                                        req.flash('successMsg', `You have registered a new ${account_type} successfully, password is ${registeredAdmin.p_check}`);
+                                        res.redirect('back');
+                                    }
+                                });
+                            }
+                        })
+                    }
+                });
+            }
+        }
+
         if(account_type == 'Agent') {
             if(req.user.role != 'Super-Admin' && req.user.role != 'Manager'){
                 req.flash('errorMsg', `You don't have priviledges to create a ${account_type} account`);
-                res.redirect('create');
+                res.redirect('back');
             } else {
 
                 Admin.findOne(emailQuery, (err, admin_email) => {
-                    if(err) {throw err}
+                    if(err) {
+                        return next(err)
+                    }
                     if(admin_email){
                         console.log(`This admin email exists already: ${admin_email}`);
                         req.flash('errorMsg', 'This agent email has been taken');
-                        res.redirect('create');
+                        res.redirect('back');
                     } else {
                         mobileQuery = {mobile: mobile};
                         Admin.findOne(mobileQuery, (err, admin_mobile) => {
-                            if(err){throw err}
+                            if(err) {
+                                return next(err)
+                            }
                             
                             if(admin_mobile){
                                 console.log(`This admin mobile exists already: ${admin_mobile}`);
                                 req.flash('errorMsg', 'This agent mobile has been taken');
-                                res.redirect('create');
+                                res.redirect('back');
                             } else {
                                 
                                 const newAdmin = new Admin({
@@ -879,7 +1112,7 @@ function createAdmin(req, res) {
         
                                 newAdmin.save( (err, registeredAdmin) => {
                                     if(err){
-                                        throw error
+                                        return next(err)
                                     } else {
                                         console.log(`Agent saved to the database ${registeredAdmin.firstname}`);
         
@@ -890,14 +1123,14 @@ function createAdmin(req, res) {
                                         });
         
                                         newAdminWallet.save( (err, registerdWallet) => {
-                                            if(err) throw err;
+                                            if(err) return next(err);
                                             else {
                                                 console.log(`AdminWallet saved to the database ${registerdWallet.wallet_id}`);
                                             }
                                         });
                                         
                                         req.flash('successMsg', `You have registered a new ${account_type} successfully, password is ${registeredAdmin.p_check}`);
-                                        res.redirect('create');
+                                        res.redirect('back');
                                     }
                                 });
                             }
@@ -910,7 +1143,7 @@ function createAdmin(req, res) {
         if(account_type == 'Manager') {
             if(req.user.role != 'Super-Admin'){
                 req.flash('errorMsg', `You don't have priviledges to create a ${account_type} account`);
-                res.redirect('create');
+                res.redirect('back');
             } else {
 
                 Admin.findOne(emailQuery, (err, admin_email) => {
@@ -918,7 +1151,7 @@ function createAdmin(req, res) {
                     if(admin_email){
                         console.log(`This admin email exists already: ${admin_email}`);
                         req.flash('errorMsg', 'This manager email has been taken');
-                        res.redirect('create');
+                        res.redirect('back');
                     } else {
                         mobileQuery = {mobile: mobile};
                         Admin.findOne(mobileQuery, (err, admin_mobile) => {
@@ -927,7 +1160,7 @@ function createAdmin(req, res) {
                             if(admin_mobile){
                                 console.log(`This admin mobile exists already: ${admin_mobile}`);
                                 req.flash('errorMsg', 'This manager mobile has been taken');
-                                res.redirect('create');
+                                res.redirect('back');
                             } else {
                                 
                                 console.log("attempting to save the admin:");
@@ -962,7 +1195,7 @@ function createAdmin(req, res) {
                                         });
                                         
                                         req.flash('successMsg', `You have registered a new ${account_type} successfully, password is ${registeredAdmin.p_check}`);
-                                        res.redirect('create');
+                                        res.redirect('back');
                                     }
                                 });
                             }
@@ -982,7 +1215,6 @@ function createAdmin(req, res) {
 */
 
 
-
 /*
 |=======================================================================================================
 |// Main Admin Action Starts 
@@ -999,11 +1231,11 @@ function genFunds(req, res, next) {
     if(errors) {
         console.log(`Validation Errors: ${JSON.stringify(errors)}`);
         req.flash('error', errors);
-        res.redirect('dashboard');
+        res.redirect('back');
     }    
     if(req.user.role != 'Super-Admin') {
         req.flash('errorMsg', `You cannot generate funds`);
-        res.redirect('dashboard');
+        res.redirect('back');
     } else {
         const amount = req.body.gen_amount;
         const remark = req.body.remark || null;
@@ -1012,12 +1244,12 @@ function genFunds(req, res, next) {
 
         if(isNaN(amount)) {
             req.flash('warningMsg', `Please enter a valid amount: "${amount}" is not a number `);
-            res.redirect('dashboard');
+            res.redirect('back');
         } else {
             
             if(amount <= 0) {
                 req.flash('infoMsg', `You can't generate anything bellow ${min_amount} `);
-                res.redirect('dashboard');
+                res.redirect('back');
             } else {
 
                 mainAdminQuery = {user_id: req.user._id};
@@ -1027,7 +1259,7 @@ function genFunds(req, res, next) {
 
                     else if(!adminWallet) {
                         req.flash('warningMsg', `Issue with your account, you can't generate right now`);
-                        res.redirect('dashboard');
+                        res.redirect('back');
                     } else {
                         
                         AdminWallet.update({ 'wallet_id': req.user.mobile, 'user_id': req.user._id }, 
@@ -1051,7 +1283,7 @@ function genFunds(req, res, next) {
                                         console.log(`GenerateFundHistory saved to the database ${History}`);
                                     
                                         req.flash('successMsg', `Accounted topped up by ${amount}, previous ballance: ${adminWallet.ballance} `);
-                                        res.redirect('dashboard');
+                                        res.redirect('back');
                                     }
                                 })
 
@@ -1067,7 +1299,7 @@ function genFunds(req, res, next) {
 
 
 //Fund Registered account
-function fundAnyAccount(req, res) {
+function fundAnyAccount(req, res, next) {
     console.log("loging Fund data: " +req.body.fund_amount, req.body.remark, req.body.account_type, req.body.wallet_id, req.body.u_id);
     // console.log(req.user.role);
     
@@ -1076,20 +1308,17 @@ function fundAnyAccount(req, res) {
     req.checkBody('wallet_id', 'Wallet is not defined').notEmpty();
     req.checkBody('u_id', 'Identity is not defined').notEmpty();
     // req.checkBody('Remark', 'remark is required').notEmpty();
-    // return null;
-    
+   
     let errors = req.validationErrors();
     if(errors) {
         console.log(`Validation Errors: ${JSON.stringify(errors)}`);
         req.flash('error', errors);
-        res.redirect('dashboard');
+        res.redirect('back');
     }    
-    // req.user.role = 'Admin';
-    // console.log(req.user.role);
-    if(req.user.role != 'Super-Admin' && req.user.role != 'Manager') {
-        console.log(req.user.role);
+    
+    if(req.user.role != 'Super-Admin' && req.user.role != 'Manager' && req.user.role != 'Agent') {
         req.flash('errorMsg', `You do not have privileges to carry out this funding action`);
-        res.redirect('/admins/dashboard');
+        res.redirect('back');
     } else {
         const fund_amount = req.body.fund_amount;
         const wallet_type = req.body.account_type;
@@ -1102,336 +1331,635 @@ function fundAnyAccount(req, res) {
         
         const min_amount = 0;
 
+
         if(isNaN(fund_amount)) {
-
             req.flash('warningMsg', `Please enter a valid amount: "${fund_amount}" is not a number `);
-            res.redirect('/admins/dashboard');
-
+            res.redirect('back');
         }
-        else {
-                       
-            if(fund_amount <= min_amount) {
-                
+        else {                       
+            if(fund_amount <= min_amount) {                
                 req.flash('warningMsg', `You can't fund anything bellow ${min_amount} `);
-                res.redirect('/admins/dashboard');
-            
+                res.redirect('back');            
             }
-            if(adminCommission < min_amount) {
-            
-                req.flash('warningMsg', `You can't apply a commission bellow ${min_amount} `);
-                res.redirect('/admins/dashboard');
-            
-            } else {
+            else {
 
-                userWalletQuery = {
-                    user_id: u_id, 
-                    wallet_id: wallet_id, 
-                    wallet_type: wallet_type
-                };
-
-                if(wallet_type == 'User') {
-                    let adminPercentage = 3;
-                    let adminCommission = req.body.com_to_admin || ((adminPercentage/100) * fund_amount);
-                
-                    if(isNaN(adminCommission)) {
-                        console.log(adminCommission)
-                        req.flash('warningMsg', `Please enter a valid commission amount: "${req.body.com_to_admin}" is not a number `);
-                        res.redirect('/admins/dashboard');
-                    } else {
-
-                        let WalletQuery = {user_id: req.user._id};
-                        console.log('adminwallet',WalletQuery);
-                        AdminWallet.findOne(
-                            {user_id: req.user._id}, 
-                            (err, adminWallet) => {
-                                if(err) throw err;
-                                if(!adminWallet) {
-                                    console.log('inside !',adminWallet);
-                                    req.flash('warningMsg', `Your admin account was not found`);
-                                    res.redirect('/admins/dashboard');
-                                } else {
-                                    if(fund_amount > adminWallet.ballance) {
-                                        req.flash('warningMsg', `Your ballance is too low, cannot move N${fund_amount}, when you only have N${adminWallet.ballance}, try again with a lower amount `);
-                                        res.redirect('/admins/dashboard');
-                                    } else {
-
-                                        UserWallet.findOne(userWalletQuery, (err, userWallet) => {
-                                            if(err) throw err;
-                                            if(!userWallet) {
-                                                req.flash('warningMsg', `Issue with this account, the account might be invalid`);
-                                                res.redirect('/admins/dashboard');
-                                            } else {
-                                                console.log(`Found user with wallet id ${userWallet.wallet_id} `);
-                                                // return null;
-                                                const new_fund_amount = fund_amount - adminCommission; //deduct the commission from the funding amount
+                CommissionSettings.findOne({}, (err, commission) => {
                     
-                                                console.log(`Attempting to deduct ${fund_amount} from ${req.user.role}:${req.user.mobile}...`);
-                                                AdminWallet.update(
-                                                    { 'wallet_id': req.user.mobile, 'user_id': req.user._id }, 
-                                                    { $inc: { 'ballance': -new_fund_amount } }, (err) => {
-                                                    if(err) throw err;
-                                                    
-                                                    else {
-                                                        console.log(`Deducted ${fund_amount} from ${req.user.role}:${req.user.mobile}..`);
-                                                        
-                                                        console.log(`Attempting to credit ${fund_amount} to ${wallet_type}:${wallet_id}...`);
+                    userWalletQuery = {
+                        user_id: u_id, 
+                        wallet_id: wallet_id, 
+                        wallet_type: wallet_type
+                    };
                         
-                                                        UserWallet.update(
-                                                            { 'wallet_id': wallet_id, 'user_id': u_id},
-                                                            { $inc: { 'ballance': new_fund_amount} }, 
-                                                            (err) => {
-                                                                if(err) throw err;
+                    if(req.user.role == "Super-Admin" || req.user.role == "Manager") {
+        
+                        if(wallet_type == 'User') {
+                            let adminPercentage = commission.standard.percent;
+                            let capOnUser = commission.standard.capped;
+                            let adminCommission = req.body.com_to_admin || ((adminPercentage/100) * fund_amount);
+
+                            adminCommission = adminCommission > capOnUser ? capOnUser : adminCommission;
+                                
+                            let WalletQuery = {user_id: req.user._id};
+                            
+                            AdminWallet.findOne(
+                                {user_id: req.user._id}, 
+                                (err, adminWallet) => {
+                                    if(err) return nrxt(err);
+                                    if(!adminWallet) {
+                                        req.flash('warningMsg', `Your admin account was not found`);
+                                        res.redirect('back');
+                                    } else {
+                                        if(fund_amount > adminWallet.ballance) {
+                                            req.flash('warningMsg', `Your ballance is too low, cannot move N${fund_amount}, when you only have N${adminWallet.ballance}, try again with a lower amount `);
+                                            res.redirect('back');
+                                        } else {
+                                            
+                                            async.parallel({
+                                                                            
+                                                userWallet: (callback) => {
+                                                    UserWallet.findOne(userWalletQuery).exec(callback);
+                                                },
+
+                                                foundUser: (callback) => {
+                                                    User.findOne({mobile: wallet_id}).exec(callback)
+                                                }
+
+                                            }, (err, result) => {
+                                                // console.log('after async: ',result);
+                                                if(err) return next(err);
+                                                else {
+                                                    
+                                                    if(!result.userWallet) {
+                                                        req.flash('warningMsg', `Issue with this account, the account might be invalid`);
+                                                        res.redirect('back');
+                                                    }
+                                                    else if(!result.foundUser) {
+                                                        req.flash('warningMsg', `Issue with this account, the user details was not found`);
+                                                        res.redirect('back');
+                                                    } else {
+
+                                                        const foundUser_fullname = result.foundUser.firstname+" "+result.foundUser.lastname;
+                                                        console.log(`Found user:${result.foundUser.firstname} with wallet id ${result.userWallet.wallet_id}`);
+                                                        // return null;
+                                                        const new_fund_amount = fund_amount - adminCommission; //deduct the commission from the funding amount
+                            
+                                                        console.log(`Attempting to deduct ${fund_amount} from ${req.user.role}:${req.user.mobile}...`);
+
+                                                        async.parallel({
+                                                            AdminWalletUpdate: (callback) => {
+                                                                AdminWallet.update(
+                                                                    { 'wallet_id': req.user.mobile, 'user_id': req.user._id },
+                                                                    { $inc: { 'ballance': -new_fund_amount } }
+                                                                ).exec(callback)
+                                                            },
+
+                                                            UserWalletUpdate: (callback) => {
+                                                                UserWallet.update(
+                                                                    { 'wallet_id': wallet_id, 'user_id': u_id},
+                                                                    { $inc: { 'ballance': new_fund_amount} }
+                                                                ).exec(callback)
+                                                            }
+                                                        }, (err) => {
+                                                            
+                                                            if(err) return next(err);
+                                                            else {
+                                                                            
+                                                                let newFundsHistory = new SendFundsHistory({
+                                                                    sender_wallet_id: req.user.mobile,
+                                                                    sender_name: req.user.firstname+ " " +req.user.lastname,
+                                                                    receiver_wallet_id: wallet_id,
+                                                                    receiver_name: foundUser_fullname,
+                                                                    amount: fund_amount,
+                                                                    sender_role: req.user.role,
+                                                                    receiver_role: wallet_type,
+                                                                    commission: adminCommission,
+                                                                    remark: remark
+                                                                });
+
+                                                                let newAdminCommissionHistory = new AdminCommissionHistory ({
+                                                                    commissionsData: {
+                                                                        com_received: adminCommission,
+                                                                        received_by: req.user._id,
+                                                                        com_charged: adminCommission,
+                                                                        charged_on: wallet_id
+                                                                    },
+
+                                                                    foundingData: {
+                                                                        fund_amount: fund_amount,
+                                                                        fund_type: req.user.role+" To "+result.foundUser.role,
+                                                                        fund_sender: {
+                                                                            sender_wallet_id: req.user.mobile,
+                                                                            sender_name: req.user.firstname+" "+req.user.lastname,
+                                                                            sender_role: req.user.role
+                                                                        },
+                                                                        fund_receiver: {
+                                                                            receiver_wallet_id: wallet_id,
+                                                                            receiver_name: foundUser_fullname,
+                                                                            receiver_role: result.foundUser.role
+                                                                        }
+                                                                    },  
+
+
+                                                                });
+                                                                   
+                                                                newFundsHistory.save()
+                                                                .then(newAdminCommissionHistory.save())
+                                                                .then( (save) => {
+                                                                    
+                                                                    console.log(`Fund:${fund_amount} moved from ${req.user.mobile} to ${wallet_id}...`);
+                                                                    req.flash('successMsg', `Account ${wallet_type}:${wallet_id} topped up by ${fund_amount}. commission of N${adminCommission} was charged on ${wallet_type}:${wallet_id} and added back to ${req.user.role}:${req.user.mobile} `);
+                                                                    res.redirect('back');
+                                                                    
+                                                                })
+                                                                .catch( (err) => {
+                                                                    console.log('err')
+                                                                    if(err) return next(err);
+                                                                });
+                                                                    
+
+                                                            }
+                                                        })
+                                                    }
+                                                }
+                                            })
+                                                                                        
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                        
+                        else if(wallet_type == 'Agent') {
+                            let adminPercentage = commission.on_agent.percent;
+                            let capOnAgent = commission.on_agent.capped;
+                            let adminCommission = req.body.com_to_admin || ((adminPercentage/100) * fund_amount);
+
+                            adminCommission = adminCommission > capOnAgent ? capOnAgent : adminCommission;
+                        
+                            if(isNaN(adminCommission)) {
+                                console.log(adminCommission)
+                                req.flash('warningMsg', `Please enter a valid commission amount: "${req.body.com_to_admin}" is not a number `);
+                                res.redirect('/admins/dashboard');
+                            }
+                            if(req.user.role != 'Super-Admin' && req.user.role != 'Manager') {
+                                console.log('Checking for', req.user._id)
+                                req.flash('warningMsg', `You cannot fund a fellow Agent`);
+                                res.redirect('back');
+                            } else {
+        
+                                let superWallet = {user_id: req.user._id};
+                                console.log('superWallet',superWallet);
+                                //find the main admin wallet
+                                AdminWallet.findOne(
+                                    {user_id: req.user._id}, 
+                                    (err, superWallet) => {
+                                        if(err) throw err;
+                                        //if the wallet is not found
+                                        if(!superWallet) {
+                                            console.log('inside !',superWallet);
+                                            req.flash('warningMsg', `Your admin account was not found`);
+                                            res.redirect('back');
+                                        } else {
+                                            //if the wallet is found
+                                            //check the funding amount against the supper admin ballance
+                                            if(fund_amount > superWallet.ballance) {
+                                                req.flash('warningMsg', `Your ballance is too low, cannot move N${fund_amount}, when you only have N${superWallet.ballance}, try again with a lower amount `);
+                                                res.redirect('back');
+                                            } else {
+                                                //if all is well with the funding amount and ballance
+                                                adminWalletQuery = {user_id: u_id, wallet_id: wallet_id, wallet_type: wallet_type};
+                                                //find the manager to fund
+                                                
+                                                async.parallel({
+                                                                                
+                                                    adminWallet: (callback) => {
+                                                        AdminWallet.findOne(adminWalletQuery).exec(callback);
+                                                    },
+
+                                                    foundAgent: (callback) => {
+                                                        Admin.findOne({mobile: wallet_id}).exec(callback)
+                                                    }
+
+                                                }, (err, result) => {
+                                                    if(err) return next(err);
+                                                    else {
+                                                        if(!result.adminWallet) {
+                                                            req.flash('warningMsg', `Issue with this account, the account might be invalid`);
+                                                            res.redirect('back');
+                                                        }
+                                                        else if(!result.foundAgent) {
+                                                            req.flash('warningMsg', `Issue with this account, the Agent details was not found`);
+                                                            res.redirect('back');
+                                                        } else {
+                                                            const foundAgent_fullname = result.foundAgent.firstname+" "+result.foundAgent.lastname;    
+                                                            
+                                                            console.log(`Found Agent:(${foundAgent_fullname}) with wallet id ${result.adminWallet.wallet_id} `);
+                                                            // return null;
+                                                            const new_fund_amount = fund_amount - adminCommission; //deduct the commission from the funding amount
+                                
+                                                            console.log(`Attempting to deduct ${fund_amount} from ${req.user.role}:${req.user.mobile}...`);
+                                                            
+                                                            
+                                                            async.parallel({
+                                                                AdminWalletUpdate: (callback) => {
+                                                                    AdminWallet.update(
+                                                                        { 'wallet_id': req.user.mobile, 'user_id': req.user._id },
+                                                                        { $inc: { 'ballance': -new_fund_amount } }
+                                                                    ).exec(callback)
+                                                                },
+
+                                                                AgentWalletUpdate: (callback) => {
+                                                                    AdminWallet.update(
+                                                                        { 'wallet_id': wallet_id, 'user_id': u_id},
+                                                                        { $inc: { 'ballance': new_fund_amount} }
+                                                                    ).exec(callback)
+                                                                }
+                                                            }, (err) => {
+                                                                if(err) return next(err);
                                                                 else {
-                                                                    // console.log(`Attempting to credit commission:${fund_amount} to ${req.user.role}:${req.mobile} from ${wallet_type}:${wallet_id}...`);
-                                                                    
-                                                                    
-                                                                    let newSendFundsHistory = new SendFundsHistory({
+                                                                                    
+                                                                    let newFundsHistory = new SendFundsHistory({
                                                                         sender_wallet_id: req.user.mobile,
                                                                         sender_name: req.user.firstname+ " " +req.user.lastname,
                                                                         receiver_wallet_id: wallet_id,
+                                                                        receiver_name: foundAgent_fullname,
                                                                         amount: fund_amount,
                                                                         sender_role: req.user.role,
                                                                         receiver_role: wallet_type,
                                                                         commission: adminCommission,
                                                                         remark: remark
                                                                     });
-                                                                                                                                        
-                                                                    newSendFundsHistory.save( (err, History) => {
-                                                                        if(err) throw err;
-                                                                        else {
-                                                                            console.log(`SendFundsHistory saved to the database ${History}`);
+
+                                                                    let newAdminCommissionHistory = new AdminCommissionHistory ({
+                                                                        commissionsData: {
+                                                                            com_received: adminCommission,
+                                                                            received_by: req.user._id,
+                                                                            com_charged: adminCommission,
+                                                                            charged_on: wallet_id
+                                                                        },
+
+                                                                        foundingData: {
+                                                                            fund_amount: fund_amount,
+                                                                            fund_type: req.user.role+" To "+result.foundAgent.role,
+                                                                            fund_sender: {
+                                                                                sender_wallet_id: req.user.mobile,
+                                                                                sender_name: req.user.firstname+" "+req.user.lastname,
+                                                                                sender_role: req.user.role
+                                                                            },
+                                                                            fund_receiver: {
+                                                                                receiver_wallet_id: wallet_id,
+                                                                                receiver_name: foundAgent_fullname,
+                                                                                receiver_role: result.foundAgent.role
+                                                                            }
+                                                                        },  
+                                                                    });
+                                                                       
+                                                                    newFundsHistory.save()
+                                                                    .then(newAdminCommissionHistory.save())
+                                                                    .then( (save) => {
                                                                         
-                                                                            console.log(`Fund:${fund_amount} moved from ${req.user.mobile} to ${wallet_id}...`);
-                                                                            req.flash('successMsg', `Account ${wallet_type}:${wallet_id} topped up by ${fund_amount}. commission of N${adminCommission} was charged on ${wallet_type}:${wallet_id} and added back to ${req.user.role}:${req.user.mobile} `);
-                                                                            res.redirect('/admins/dashboard');
-                                                                        }
+                                                                        console.log(`Fund:${fund_amount} moved from ${req.user.mobile} to ${wallet_id}...`);
+                                                                        req.flash('successMsg', `${wallet_type} Account ${foundAgent_fullname}:${wallet_id} topped up by ${fund_amount}. commission of N${adminCommission} was charged on ${wallet_type}:${wallet_id} and added back to ${req.user.role}:${req.user.mobile} `);
+                                                                        res.redirect('back');
+                                                                        
                                                                     })
+                                                                    .catch( (err) => {
+                                                                        console.log('err')
+                                                                        if(err) return next(err);
+                                                                    });
                                                                 }
-                                                            }
-                                                        )                
-                                                    }                            
-                                                });
+                                                            })
+                                                        }
+                                                    }
+                                                })
                                             }
-                                        })
+                                        }
                                     }
-                                }
-                            }
-                        )
+                                )
+        
+                            }                    
+                        }
 
-                    }
-                    
-                }
-
-                else if(wallet_type == 'Agent') {
-                    let adminPercentage = 5;
-                    let adminCommission = req.body.com_to_admin || ((adminPercentage/100) * fund_amount);
-                
-                    if(isNaN(adminCommission)) {
-                        console.log(adminCommission)
-                        req.flash('warningMsg', `Please enter a valid commission amount: "${req.body.com_to_admin}" is not a number `);
-                        res.redirect('/admins/dashboard');
-                    }
-                    if(req.user.role != 'Super-Admin' && req.user.role != 'Manager') {
-                        console.log('Checking for', req.user._id)
-                        req.flash('warningMsg', `You cannot fund a fellow Agent`);
-                        res.redirect('/admins/dashboard');
-                    } else {
-
-                        let superWallet = {user_id: req.user._id};
-                        console.log('superWallet',superWallet);
-                        //find the main admin wallet
-                        AdminWallet.findOne(
-                            {user_id: req.user._id}, 
-                            (err, superWallet) => {
-                                if(err) throw err;
-                                //if the wallet is not found
-                                if(!superWallet) {
-                                    console.log('inside !',superWallet);
-                                    req.flash('warningMsg', `Your admin account was not found`);
-                                    res.redirect('/admins/dashboard');
-                                } else {
-                                    //if the wallet is found
-                                    //check the funding amount against the supper admin ballance
-                                    if(fund_amount > superWallet.ballance) {
-                                        req.flash('warningMsg', `Your ballance is too low, cannot move N${fund_amount}, when you only have N${superWallet.ballance}, try again with a lower amount `);
-                                        res.redirect('/admins/dashboard');
-                                    } else {
-                                        //if all is well with the funding amount and ballance
-                                        adminWalletQuery = {user_id: u_id, wallet_id: wallet_id, wallet_type: wallet_type};
-                                        //find the manager to fund
-                                        AdminWallet.findOne(adminWalletQuery, (err, adminWallet) => {
-                                            if(err) throw err;
-                                            if(!adminWallet) {
-                                                req.flash('warningMsg', `Issue with this account, the account might be invalid`);
-                                                res.redirect('/admins/dashboard');
-                                            } else {
-                                                console.log(`Found user with wallet id ${adminWallet.wallet_id} `);
-                                                // return null;
-                                                const new_fund_amount = fund_amount - adminCommission; //deduct the commission from the funding amount
-                    
-                                                console.log(`Attempting to deduct ${fund_amount} from ${req.user.role}:${req.user.mobile}...`);
-                                                AdminWallet.update(
-                                                    { 'wallet_id': req.user.mobile, 'user_id': req.user._id }, 
-                                                    { $inc: { 'ballance': -new_fund_amount } }, (err) => {
-                                                    if(err) throw err;
-                                                    
-                                                    else {
-                                                        console.log(`Deducted ${fund_amount} from ${req.user.role}:${req.user.mobile}..`);
-                                                        
-                                                        console.log(`Attempting to credit ${fund_amount} to ${wallet_type}:${wallet_id}...`);
+                        else if(wallet_type == 'Manager') {
+                            let adminPercentage = 0;
+                            let adminCommission = 0 || ((adminPercentage/100) * fund_amount);
                         
-                                                        AdminWallet.update(
-                                                            { 'wallet_id': wallet_id, 'user_id': u_id},
-                                                            { $inc: { 'ballance': new_fund_amount} }, 
-                                                            (err) => {
-                                                                if(err) throw err;
+                            if(isNaN(adminCommission)) {
+                                console.log(adminCommission)
+                                req.flash('warningMsg', `Please enter a valid commission amount: "${req.body.com_to_admin}" is not a number `);
+                                res.redirect('back');
+                            }
+                            if(req.user.role != 'Super-Admin') {
+                                console.log('Checking for', req.user._id)
+                                req.flash('warningMsg', `You cannot fund a fellow Managert: "${req.body.com_to_admin}" is not a number `);
+                                res.redirect('back');
+                            } else {
+        
+                                let superWallet = {user_id: req.user._id};
+                                console.log('superWallet',superWallet);
+                                //find the main admin wallet
+                                AdminWallet.findOne(
+                                    {user_id: req.user._id},
+                                    (err, superWallet) => {
+                                        if(err) throw err;
+                                        //if the wallet is not found
+                                        if(!superWallet) {
+                                            console.log('inside !',superWallet);
+                                            req.flash('warningMsg', `Your admin account was not found`);
+                                            res.redirect('back');
+                                        } else {
+                                            //if the wallet is found
+                                            //check the funding amount against the supper admin ballance
+                                            if(fund_amount > superWallet.ballance) {
+                                                req.flash('warningMsg', `Your ballance is too low, cannot move N${fund_amount}, when you only have N${superWallet.ballance}, try again with a lower amount `);
+                                                res.redirect('back');
+                                            } else {
+                                                //if all is well with the funding amount and ballance
+                                                adminWalletQuery = {user_id: u_id, wallet_id: wallet_id, wallet_type: wallet_type};
+                                                //find the manager to fund
+                                                
+                                                async.parallel({
+                                                                                
+                                                    adminWallet: (callback) => {
+                                                        AdminWallet.findOne(adminWalletQuery).exec(callback);
+                                                    },
+
+                                                    foundManager: (callback) => {
+                                                        Admin.findOne({mobile: wallet_id}).exec(callback)
+                                                    }
+
+                                                }, (err, result) => {
+                                                    if(err) return next(err);
+                                                    else {
+                                                        
+                                                        if(!result.adminWallet) {
+                                                            req.flash('warningMsg', `Issue with this account, the Account wallet details might be invalid`);
+                                                            res.redirect('back');
+                                                        }
+                                                        else if(!result.foundManager) {
+                                                            req.flash('warningMsg', `Issue with this account, the Manager details was not found`);
+                                                            res.redirect('back');
+                                                        } else {
+                                                            console.log(`Found user with wallet id ${result.adminWallet.wallet_id} `);
+                                                            // return null;
+                                                            const new_fund_amount = fund_amount - adminCommission; //deduct the commission from the funding amount
+                                
+                                                            console.log(`Attempting to deduct ${fund_amount} from ${req.user.role}:${req.user.mobile}...`);
+                                                            
+                                                            const foundManager_fullname = result.foundManager.firstname+" "+result.foundManager.lastname;
+                                                            
+                                                            async.parallel({
+                                                                AdminWalletUpdate: (callback) => {
+                                                                    AdminWallet.update(
+                                                                        { 'wallet_id': req.user.mobile, 'user_id': req.user._id },
+                                                                        { $inc: { 'ballance': -new_fund_amount } }
+                                                                    ).exec(callback)
+                                                                },
+
+                                                                ManagerWalletUpdate: (callback) => {
+                                                                    AdminWallet.update(
+                                                                        { 'wallet_id': wallet_id, 'user_id': u_id},
+                                                                        { $inc: { 'ballance': new_fund_amount} }
+                                                                    ).exec(callback)
+                                                                }
+                                                            }, (err) => {
+                                                                if(err) return next(err);
                                                                 else {
-                                                                    // console.log(`Attempting to credit commission:${fund_amount} to ${req.user.role}:${req.mobile} from ${wallet_type}:${wallet_id}...`);
-                    
-                                                                    let newSendFundsHistory = new SendFundsHistory({
+                                                                                    
+                                                                    let newFundsHistory = new SendFundsHistory({
                                                                         sender_wallet_id: req.user.mobile,
                                                                         sender_name: req.user.firstname+ " " +req.user.lastname,
                                                                         receiver_wallet_id: wallet_id,
+                                                                        receiver_name: foundManager_fullname,
                                                                         amount: fund_amount,
                                                                         sender_role: req.user.role,
                                                                         receiver_role: wallet_type,
                                                                         commission: adminCommission,
                                                                         remark: remark
                                                                     });
-                                                                                                                                        
-                                                                    newSendFundsHistory.save( (err, History) => {
-                                                                        if(err) throw err;
-                                                                        else {
-                                                                            console.log(`SendFundsHistory saved to the database ${History}`);
-                                                                        
-                                                                            console.log(`Fund:${fund_amount} moved from ${req.user.mobile} to ${wallet_id}...`);
-                                                                            req.flash('successMsg', `Account ${wallet_type}:${wallet_id} topped up by ${fund_amount}. commission of N${adminCommission} was charged on ${wallet_type}:${wallet_id} and added back to ${req.user.role}:${req.user.mobile} `);
-                                                                            res.redirect('/admins/dashboard');
-                                                                        }
-                                                                    })
 
-                                                                }
-                                                            }
-                                                        )                
-                                                    }                            
-                                                });
-                                            }
-                                        })
-                                    }
-                                }
-                            }
-                        )
+                                                                    let newAdminCommissionHistory = new AdminCommissionHistory ({
+                                                                        commissionsData: {
+                                                                            com_received: adminCommission,
+                                                                            received_by: req.user._id,
+                                                                            com_charged: adminCommission,
+                                                                            charged_on: wallet_id
+                                                                        },
 
-                    }                    
-                }
-
-                else if(wallet_type == 'Manager') {
-                    let adminPercentage = 0;
-                    let adminCommission = req.body.com_to_admin || ((adminPercentage/100) * fund_amount);
-                
-                    if(isNaN(adminCommission)) {
-                        console.log(adminCommission)
-                        req.flash('warningMsg', `Please enter a valid commission amount: "${req.body.com_to_admin}" is not a number `);
-                        res.redirect('/admins/dashboard');
-                    }
-                    if(req.user.role != 'Super-Admin') {
-                        console.log('Checking for', req.user._id)
-                        req.flash('warningMsg', `You cannot fund a fellow Managert: "${req.body.com_to_admin}" is not a number `);
-                        res.redirect('/admins/dashboard');
-                    } else {
-
-                        let superWallet = {user_id: req.user._id};
-                        console.log('superWallet',superWallet);
-                        //find the main admin wallet
-                        AdminWallet.findOne(
-                            {user_id: req.user._id},
-                            (err, superWallet) => {
-                                if(err) throw err;
-                                //if the wallet is not found
-                                if(!superWallet) {
-                                    console.log('inside !',superWallet);
-                                    req.flash('warningMsg', `Your admin account was not found`);
-                                    res.redirect('/admins/dashboard');
-                                } else {
-                                    //if the wallet is found
-                                    //check the funding amount against the supper admin ballance
-                                    if(fund_amount > superWallet.ballance) {
-                                        req.flash('warningMsg', `Your ballance is too low, cannot move N${fund_amount}, when you only have N${superWallet.ballance}, try again with a lower amount `);
-                                        res.redirect('/admins/dashboard');
-                                    } else {
-                                        //if all is well with the funding amount and ballance
-                                        adminWalletQuery = {user_id: u_id, wallet_id: wallet_id, wallet_type: wallet_type};
-                                        //find the manager to fund
-                                        AdminWallet.findOne(adminWalletQuery, (err, adminWallet) => {
-                                            if(err) throw err;
-                                            if(!adminWallet) {
-                                                req.flash('warningMsg', `Issue with this account, the account might be invalid`);
-                                                res.redirect('/admins/dashboard');
-                                            } else {
-                                                console.log(`Found user with wallet id ${adminWallet.wallet_id} `);
-                                                // return null;
-                                                const new_fund_amount = fund_amount - adminCommission; //deduct the commission from the funding amount
-                    
-                                                console.log(`Attempting to deduct ${fund_amount} from ${req.user.role}:${req.user.mobile}...`);
-                                                AdminWallet.update(
-                                                    { 'wallet_id': req.user.mobile, 'user_id': req.user._id }, 
-                                                    { $inc: { 'ballance': -new_fund_amount } }, (err) => {
-                                                    if(err) throw err;
-                                                    
-                                                    else {
-                                                        console.log(`Deducted ${fund_amount} from ${req.user.role}:${req.user.mobile}..`);
-                                                        
-                                                        console.log(`Attempting to credit ${fund_amount} to ${wallet_type}:${wallet_id}...`);
-                        
-                                                        AdminWallet.update(
-                                                            { 'wallet_id': wallet_id, 'user_id': u_id},
-                                                            { $inc: { 'ballance': new_fund_amount} }, 
-                                                            (err) => {
-                                                                if(err) throw err;
-                                                                else {
-                                                                    // console.log(`Attempting to credit commission:${fund_amount} to ${req.user.role}:${req.mobile} from ${wallet_type}:${wallet_id}...`);
-                                                                    
-                                                                    
-                                                                    let newSendFundsHistory = new SendFundsHistory({
-                                                                        sender_wallet_id: req.user.mobile,
-                                                                        sender_name: req.user.firstname+ " " +req.user.lastname,
-                                                                        receiver_wallet_id: wallet_id,
-                                                                        amount: fund_amount,
-                                                                        sender_role: req.user.role,
-                                                                        receiver_role: wallet_type,
-                                                                        commission: adminCommission,
-                                                                        remark: remark
+                                                                        foundingData: {
+                                                                            fund_amount: fund_amount,
+                                                                            fund_type: req.user.role+" To "+result.foundManager.role,
+                                                                            fund_sender: {
+                                                                                sender_wallet_id: req.user.mobile,
+                                                                                sender_name: req.user.firstname+" "+req.user.lastname,
+                                                                                sender_role: req.user.role
+                                                                            },
+                                                                            fund_receiver: {
+                                                                                receiver_wallet_id: wallet_id,
+                                                                                receiver_name: foundManager_fullname,
+                                                                                receiver_role: result.foundManager.role
+                                                                            }
+                                                                        },  
                                                                     });
-                                                                                                                                        
-                                                                    newSendFundsHistory.save( (err, History) => {
-                                                                        if(err) throw err;
-                                                                        else {
-                                                                            console.log(`SendFundsHistory saved to the database ${History}`);
+                                                                       
+                                                                    newFundsHistory.save()
+                                                                    .then(newAdminCommissionHistory.save())
+                                                                    .then( (save) => {
                                                                         
-                                                                            console.log(`Fund:${fund_amount} moved from ${req.user.mobile} to ${wallet_id}...`);
-                                                                            req.flash('successMsg', `Account ${wallet_type}:${wallet_id} topped up by ${fund_amount}. commission of N${adminCommission} was charged on ${wallet_type}:${wallet_id} and added back to ${req.user.role}:${req.user.mobile} `);
-                                                                            res.redirect('/admins/dashboard');
-                                                                        }
+                                                                        console.log(`Fund:${fund_amount} moved from ${req.user.mobile} to ${wallet_id}...`);
+                                                                        req.flash('successMsg', `${wallet_type} Account ${foundManager_fullname}:${wallet_id} topped up by ${fund_amount}. commission of N${adminCommission} was charged on ${wallet_type}:${wallet_id} and added back to ${req.user.role}:${req.user.mobile} `);
+                                                                        res.redirect('back');
+                                                                        
                                                                     })
+                                                                    .catch( (err) => {
+                                                                        console.log('err')
+                                                                        if(err) return next(err);
+                                                                    });
                                                                 }
-                                                            }
-                                                        )                
-                                                    }                            
-                                                });
+                                                            })
+                                                        }
+                                                    }
+                                                })
                                             }
-                                        })
+                                        }
+                                    }
+                                )        
+                            }                    
+                        }
+
+                        else{
+                            req.flash('warningMsg', `You can't fund this person`);
+                            res.redirect('back');  
+                        }
+                    }
+                        
+                    if(req.user.role == "Agent") {
+                        
+                        if(wallet_type == 'User') {
+                            let adminPercentage = commission.standard.percent;
+                            let capOnUser = commission.standard.capped;
+                            let adminCommission = req.body.com_to_admin || ((adminPercentage/100) * fund_amount);
+
+                            adminCommission = adminCommission > capOnUser ? capOnUser : adminCommission;
+
+                            comToMainAdmin = adminCommission * 60/100; 
+                            comToAgent = adminCommission * 40/100; 
+                                
+                            let WalletQuery = {user_id: req.user._id};
+                            console.log('adminwallet',WalletQuery);
+
+                            AdminWallet.findOne(
+                                {user_id: req.user._id}, 
+                                (err, adminWallet) => {
+                                    if(err) return next(err);
+                                    if(!adminWallet) {
+                                        req.flash('warningMsg', `Your admin account was not found`);
+                                        res.redirect('back');
+                                    } else {
+                                        if(fund_amount > adminWallet.ballance) {
+                                            req.flash('warningMsg', `Your ballance is too low, cannot move N${fund_amount}, when you only have N${adminWallet.ballance}, try again with a lower amount `);
+                                            res.redirect('back');
+                                        } else {
+                                            
+                                            async.parallel({
+                                                userWallet: (callback) => {
+                                                    UserWallet.findOne(userWalletQuery).exec(callback);
+                                                },
+
+                                                foundUser: (callback) => {
+                                                    User.findOne({mobile: wallet_id}).exec(callback)
+                                                },
+
+                                                foundMainWallet: (callback) => {
+                                                    AdminWallet.findOne({'wallet_type': 'Super-Admin'}).exec(callback)
+                                                }
+                                                
+                                            }, (err, result) => {
+                                                if(err) return next(err);
+                                                else {
+                                                    if(!result.userWallet) {
+                                                        req.flash('warningMsg', `Issue with this account, the Account wallet details might be invalid`);
+                                                        res.redirect('back');
+                                                    }
+                                                    else if(!result.foundUser) {
+                                                        req.flash('warningMsg', `Issue with this account, the Manager details was not found`);
+                                                        res.redirect('back');
+                                                    } else {
+                                                        
+                                                        const foundUser_fullname = result.foundUser.firstname+" "+result.foundUser.lastname;
+
+                                                        console.log(`${result.foundUser.role} Found: ${foundUser_fullname} with wallet id ${result.userWallet.wallet_id} `);
+
+                                                        const new_fund_amount = fund_amount - adminCommission; //deduct the commission from the funding amount
+                                                        const agent_fund_amount = fund_amount - comToAgent; //deduct the agent commission from the funding amount
+                                                        
+                                                        async.parallel({
+    
+                                                            userWalletUpdate: (callback) => {
+                                                                UserWallet.update(
+                                                                    { 'wallet_id': wallet_id, 'user_id': u_id},
+                                                                    { $inc: { 'ballance': new_fund_amount} }
+                                                                ).exec(callback);
+                                                            },
+                                                            
+                                                            agentWalletUpdate: (callback) => {
+                                                                AdminWallet.update(
+                                                                    { 'wallet_id': req.user.mobile, 'user_id': req.user._id },
+                                                                    { $inc: { 'ballance': -agent_fund_amount } },
+                                                                ).exec(callback);
+                                                            },
+    
+                                                            MainAdminWalletUpdate: (callback) => {
+                                                                AdminWallet.update(
+                                                                    { 
+                                                                        'wallet_type': 'Super-Admin', 
+                                                                        'user_id': result.foundMainWallet.user_id, 
+                                                                        'wallet_id': result.foundMainWallet.wallet_id 
+                                                                    },
+                                                                    { $inc: { 'ballance': comToMainAdmin} }
+                                                                ).exec(callback);
+                                                            },
+                                                            
+                                                        }, (err) => {
+                                                            if(err) return next(err);
+                                                            else {
+                                                                                                                                                
+                                                                let newFundsHistory = new SendFundsHistory({
+                                                                    sender_wallet_id: req.user.mobile,
+                                                                    sender_name: req.user.firstname+ " " +req.user.lastname,
+                                                                    receiver_wallet_id: wallet_id,
+                                                                    receiver_name: foundUser_fullname,
+                                                                    amount: fund_amount,
+                                                                    sender_role: req.user.role,
+                                                                    receiver_role: wallet_type,
+                                                                    commission: adminCommission,
+                                                                    remark: remark
+                                                                });
+    
+                                                                let newAgentCommissionHistory = new AgentCommissionHistory ({
+                                                                    commissionsData: {
+                                                                        com_received_by_admin: {
+                                                                            received_by: result.foundMainWallet.user_id,
+                                                                            amount: comToMainAdmin
+                                                                        },
+                                                                        
+                                                                        com_received_by_agent: {
+                                                                            received_by: req.user._id,
+                                                                            amount: comToAgent
+                                                                        },                                                                        
+                                                                        
+                                                                        com_charged: adminCommission,
+                                                                        charged_on: wallet_id
+                                                                    },
+    
+                                                                    foundingData: {
+                                                                        fund_amount: fund_amount,
+                                                                        fund_type: req.user.role+" To "+result.foundUser.role,
+                                                                        fund_sender: {
+                                                                            sender_wallet_id: req.user.mobile,
+                                                                            sender_name: req.user.firstname+" "+req.user.lastname,
+                                                                            sender_role: req.user.role
+                                                                        },
+                                                                        fund_receiver: {
+                                                                            receiver_wallet_id: wallet_id,
+                                                                            receiver_name: foundUser_fullname,
+                                                                            receiver_role: result.foundUser.role
+                                                                        }
+                                                                    },  
+                                                                });
+                                                                   
+                                                                newFundsHistory.save()
+                                                                .then(newAgentCommissionHistory.save())
+                                                                .then( (save) => {
+                                                                    
+                                                                    console.log(`Fund:${fund_amount} moved from ${req.user.mobile} to ${wallet_id}...`);
+                                                                    req.flash('successMsg', `${wallet_type} Account ${foundUser_fullname}:${wallet_id} topped up by 
+                                                                    ${fund_amount}. commission of N${adminCommission} was charged on ${wallet_type}:${wallet_id}, 
+                                                                    out of which ${comToAgent} was added back to ${req.user.role}:${req.user.mobile}, and 
+                                                                    ${comToMainAdmin} was added to Super-Admin `);
+                                                                    res.redirect('back');
+                                                                    
+                                                                })
+                                                                .catch( (err) => {
+                                                                    console.log('err')
+                                                                    if(err) return next(err);
+                                                                });
+                                                            }
+                                                        })                                                        
+                                                    }
+                                                }
+                                            })
+                                        }
                                     }
                                 }
-                            }
-                        )
-
-                    }                    
-                }
-                else{
-                    req.flash('warningMsg', `You can't fund this person`);
-                    res.redirect('/admins/dashboard');  
-                }
-
+                            )                            
+                        } else {
+                            req.flash('warningMsg', `You can't fund this person`);
+                            res.redirect('back');
+                        }
+                    }
+                })                
             }
         }
     }
@@ -1463,7 +1991,7 @@ function ensureAuth(req, res, next){
 function redirectIfAuth(req, res, next){
     if(req.isAuthenticated()){
         req.flash('infoMsg', 'You are already logged in');
-        res.redirect('/admins/dashboard');
+        res.redirect('back');
     } else {
         return next();
     }

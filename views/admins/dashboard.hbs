@@ -17,13 +17,10 @@
 				
 			    <div class="col-lg-4 col-md-6">
 			        <div class="widget widget-stats bg-gradient-teal">
-						<div class="stats-icon stats-icon-lg"><i class="fa fa-dollar-sign fa-fw"></i></div>
+						<div class="stats-icon stats-icon-lg"><i class="fa fa-globe fa-fw"></i></div>
 			        	<div class="stats-content">
 							<div class="stats-title">BEWLA BALLANCE</div>
 							<div class="stats-number"> &#8358; {{formatCash adminWallet.ballance}}</div>
-							{{!-- <div class="stats-progress progress">
-								<div class="progress-bar" style="width: 70.1%;"></div>
-							</div>			 --}}
 							{{#if mainAdmin}}				
 							<div class="stats-desc"><a href="#modal-dialog" class="btn btn-white btn-lg btn-block" data-toggle="modal">Generate Fund</a></div>
 							{{/if}}
@@ -75,13 +72,122 @@
 				
 			    <!-- begin col-3 -->
 				
-			    <div class="col-lg-3 col-md-6">
+			    <div class="col-lg-4 col-md-6">
 			        <div class="widget widget-stats bg-gradient-teal">
-						<div class="stats-icon stats-icon-lg"><i class="fa fa-dollar-sign fa-fw"></i></div>
+						<div class="stats-icon stats-icon-lg"><i class="fa fa-globe fa-fw"></i></div>
 			        	<div class="stats-content">
-							<div class="stats-title">RECEIVED COMMISSIONS</div>
+							<div class="stats-title">RECEIVED COMMISSIONS</div><span class="capped"></span>
 							<div class="stats-number"> &#8358; {{commissionsWallet.ballance}}</div>
-							<div class="stats-desc"><a href="" class="btn btn-secondary btn-lg btn-block" data-toggle="modal">Commissions History</a></div>
+							{{#if mainAdmin}}
+								<div class="stats-desc m-t-5">
+									<a href="" class="btn btn-default btn-md m-r-20 m-b-5" data-toggle="modal">History</a>
+									<a href="#commissions" class="btn btn-primary btn-md m-r-20" data-toggle="modal">Commission Settings</a>
+								</div>
+							{{/if}}
+							
+							<!-- #modal-dialog -->
+							<div class="modal fade" id="commissions">
+								<div class="modal-dialog">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h4 class="modal-title">Commissions Settings</h4>
+											<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+										</div>
+										<div class="modal-body">
+											<form action="admins/gen-funds" method="POST" class="margin-bottom-0">
+												<h4>Charge on Admins</h4>
+												<div class="row">
+													<div class="col-md-6">
+														<div class="form-group  m-b-20">
+															<label for="remember_checkbox">
+																Percentage(%) Charge on Agent 
+															</label>
+															<input type="text" name="percentChargeOnAdmins" class="form-control input-percent-agent" value="{{ commissionsData.on_agent.percent }}" placeholder="Enter Amount" required />
+															<span class="text-danger percent-error-agent"> </span>
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group  m-b-20">
+															<label for="remember_checkbox">
+																Cap/Limit on Agent(&#8358;)
+															</label>
+															<input type="text" name="cappedChaargeOnAdmins" class="form-control input-capped-agent" value="{{ commissionsData.on_agent.capped }}" placeholder="Enter Amount" required />
+															<span class="text-danger capped-error-agent"> </span>
+														</div>
+													</div>
+												</div>
+												<div class="col-xs-12">
+													<h4>Description</h4>
+
+													<div class="col-xs-12">
+														<h5 class="m-b-0">1. When Admin funds Agent</h5>
+														<p class="text-dark">When a <strong>Company Staff (Main-Admin/Manager)</strong> funds an Agent a 
+															<strong><span class="percentChargeOnAgent">{{ commissionsData.on_agent.percent }}</span></strong>% commission capped at 
+															<strong>&#8358;<span class="cappedChargeOnAgent">{{ commissionsData.on_agent.capped }}</span></strong> will be charged on the Agent and added to the
+															<strong>Company Staff's</strong> ballance.
+														</p>
+													</div>
+												</div>
+												<hr class="text-info">
+
+												<h4>Charge on Users</h4>
+												<div class="row">
+													<div class="col-md-6">
+														<div class="form-group  m-b-20">
+															<label for="remember_checkbox">
+																Percentage Charge(%) on Users
+															</label>
+															<input type="text" name="percentCharge" class="form-control input-percent" value="{{ commissionsData.standard.percent }}" placeholder="Enter Amount" required />
+															<span class="text-danger percent-error"> </span>
+														</div>
+													</div>
+													<div class="col-md-6">
+														<div class="form-group  m-b-20">
+															<label for="remember_checkbox">
+																Cap/Limit (&#8358;) on Users
+															</label>
+															<input type="text" name="cappedChaarge" class="form-control input-capped" value="{{ commissionsData.standard.capped }}" placeholder="Enter Amount" required />
+															<span class="text-danger capped-error"> </span>
+														</div>
+													</div>
+												</div>
+												<div class="col-xs-12">
+													<h4>Description</h4>
+
+													<div class="col-xs-12">
+														<h5 class="m-b-0">1. When Admin funds User</h5>
+														<p class="text-dark">When a <strong>Company Staff(Main-Admin or Manager)</strong> funds a User a 
+															<strong><span class="percentCharge">{{ commissionsData.standard.percent }}</span></strong>% commission capped at 
+															<strong>&#8358;<span class="cappedCharge">{{ commissionsData.standard.capped }}</span></strong> will be charged on the User and added to the
+															<strong>Company Staff's</strong> ballance.
+														</p>
+													</div>
+
+													<div class="col-xs-12">
+														<h5 class="m-b-0">2. When Agent funds User</h5>
+														<p class="text-dark">When an <strong>Agent</strong> funds a User a 
+															<strong><span class="percentCharge">{{ commissionsData.standard.percent }}</span></strong>% commission capped at 
+															<strong>&#8358;<span class="cappedCharge">{{ commissionsData.standard.capped }}</span></strong> will be charged on the User.
+															<strong>60%</strong> of this commission will be added to Bewla's <strong>Main Admin's</strong> ballance while 
+															<strong>40%</strong> will be added to the <strong>Agent's</strong> ballance.
+														</p>
+													</div>
+												</div>
+												<div class="login-buttons">
+													<button type="submit" class="btn btn-success btn-block btn-lg">Update Commission Charges</button>
+												</div>
+											</form>
+										</div>
+										<div class="modal-footer">
+											<a href="javascript:;" class="btn btn-white btn-block btn-lg" data-dismiss="modal">Cancel</a>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{{#unless mainAdmin}}
+								<div class="stats-desc"><a href="" class="btn btn-secondary btn-lg btn-block" data-toggle="modal">Commissions History</a></div>
+							{{/unless}}
 						</div>
 			        </div>
 			    </div>
@@ -251,4 +357,5 @@
 			<!-- end row -->
 		</div>
 		<!-- end #content -->
+
 		

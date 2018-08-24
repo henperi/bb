@@ -48,11 +48,11 @@
 												<td>{{ this.firstname }} {{ this.lastname }}</td>
 												<td>{{ this.mobile }}</td>
 												<td>{{ this.email }}</td>
-												<td>{{ this.account_type }}</td>
+												<td>{{ this.role }}</td>
 												<td>{{formatCash this.wallets.[0].ballance}}</td>
 												<td class="with-btn" nowrap>
 													<a href="#edit_{{this.mobile}}" class="btn btn-sm btn-primary width-60 m-r-2" data-toggle="modal">Fund</a>
-													<a href="admins/edit/{{this.account_type}}/{{this.email}}" class="btn btn-sm btn-info width-60 m-r-2">Edit</a>
+													<a href="admins/edit/{{this.role}}/{{this.email}}" class="btn btn-sm btn-info width-60 m-r-2">Edit</a>
 													<a href="javascript:;" class="btn btn-sm btn-warning width-60 m-r-2">Block</a>
 												</td>
 												
@@ -62,11 +62,11 @@
 														<div class="modal-dialog">
 															<div class="modal-content">
 																<div class="modal-header">
-																	<h4 class="modal-title">Fund {{ this.firstname }} <span class="badge badge-info">{{ this.account_type }}</span></h4>
+																	<h4 class="modal-title">Fund {{ this.firstname }} <span class="badge badge-info">{{ this.role }}</span></h4>
 																	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 																</div>
 																<div class="modal-body">
-																	<form action="admins/fund/accounts/{{ this.account_type }}" method="POST" class="margin-bottom-0">
+																	<form action="admins/fund/accounts/{{ this.role }}" method="POST" class="margin-bottom-0">
 																		<div class="form-group m-b-20">
 																			<label for="enter_amount">
 																				Enter Amount 
@@ -81,7 +81,7 @@
 																		</div>
 
 																		<div class="form-group m-b-20 d-none">
-																			<input type="text" name="account_type" class="form-control form-control-lg" value="{{ this.account_type }}" required />
+																			<input type="text" name="account_type" class="form-control form-control-lg" value="{{ this.role }}" required />
 																			<input type="text" name="wallet_id" class="form-control form-control-lg" value="{{ this.wallets.[0].wallet_id }}" required />
 																			<input type="text" name="u_id" class="form-control form-control-lg" value="{{ this._id }}" required />
 																		</div>
@@ -99,7 +99,7 @@
 																			</label>
 																		</div>
 																		<div class="login-buttons">
-																			<button type="submit" class="btn btn-success btn-block btn-lg">Fund {{ this.account_type }}</button>
+																			<button type="submit" class="btn btn-success btn-block btn-lg">Fund {{ this.role }}</button>
 																		</div>
 																	</form>
 																</div>

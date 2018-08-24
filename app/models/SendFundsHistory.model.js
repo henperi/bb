@@ -7,16 +7,6 @@ const Schema = mongoose.Schema;
 
 //Define the admin schema model
 const sendFundSchema = mongoose.Schema({
-    // wallet_id: String,
-    // sender_id: {
-    //     type: Schema.Types.ObjectId,
-    //     ref: Admin,
-    //     required: true
-    // },
-    // receiver_id: {
-    //     type: Schema.Types.ObjectId,
-    //     required: true
-    // },
     sender_wallet_id: {
         type: String,
         required: true
@@ -50,7 +40,7 @@ const sendFundSchema = mongoose.Schema({
         required: false
     },
     commission: {
-        type: String,
+        type: Number,
         required: false
     }
 }, {

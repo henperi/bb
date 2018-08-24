@@ -62,6 +62,7 @@
 					{{/if}}
 					<li class="has-sub">
 						<a href="javascript:;">
+							<b class="caret"></b>
 							{{!-- <span class="badge pull-right">10</span> --}}
 							<i class="fa fa-hdd"></i> 
 							<span>Fund Account</span>
@@ -94,6 +95,42 @@
 						    <li class="active"><a href="admins/transactions/sent-funds">Sent Funds</a></li>
 						</ul>
 					</li>
+
+					{{#unless mainAdmin}}
+					<li class="">
+						<a href="admins/commissions/received-commissions">
+							<i class="fa fa-book"></i> 
+							<span>Received Commissions</span>
+						</a>
+					</li>
+					{{/unless}}
+					
+					{{#if mainAdmin}}
+					<li class="has-sub">
+						<a href="javascript:;">
+					        <b class="caret"></b>
+							<i class="fa fa-book"></i> 
+							<span>Received Commissions</span>
+						</a>
+						<ul class="sub-menu">
+						    <li class="active"><a href="admins/commissions/direct-commissions">Direct Commissions</a></li>
+						    <li class="active"><a href="admins/commissions/indirect-commissions">Indirect Commissions</a></li>
+						</ul>
+					</li>
+					{{/if}}
+
+					{{#if mainAdmin}}
+					<li class="has-sub">
+						<a href="javascript:;">
+					        <b class="caret"></b>
+							<i class="fa fa-book"></i> 
+							<span>Settings</span>
+						</a>
+						<ul class="sub-menu">
+						    <li class="active"><a href="admins/commissions/commissions-settings">Commissions Settings</a></li>
+						</ul>
+					</li>
+					{{/if}}
 			        <!-- begin sidebar minify button -->
 					<li><a href="javascript:;" class="sidebar-minify-btn" data-click="sidebar-minify"><i class="fa fa-angle-double-left"></i></a></li>
 			        <!-- end sidebar minify button -->
