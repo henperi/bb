@@ -128,7 +128,7 @@ router.post('/signup', (req, res) => {
 
                         Admin.findOne({}, (err, result) => {
                             if(err) return next(err);
-                            else if(result.length > 0) {
+                            else if(result) {
                                 req.flash('errorMsg', 'Unable to register, please contact an admin');
                                 res.redirect('back');
                             } else {
