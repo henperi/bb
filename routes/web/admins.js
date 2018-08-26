@@ -230,9 +230,6 @@ router.all('*', (req, res, next) => {
 */
 //Enter the admin dashboard
 router.get('/dashboard', ensureAuth, (req, res, next) => {
-    // console.log('User:' + req.user, req.user._id);
-    // console.log("RES " +req.wallet)
-    // console.log('from dashboard' +req.mainAdmin);
     
     if(req.user.role == 'Super-Admin' || req.user.role == 'Manager' || req.user.role == 'Agent' || req.user.role == 'Admin'){
         
@@ -340,7 +337,7 @@ router.get('/accounts/users', ensureAuth, (req, res, next) => {
     }
 })
 
-router.get('/accounts/agents', ensureAuth, (req, res) => {
+router.get('/accounts/agents', ensureAuth, (req, res, next) => {
     
     if(req.user.role == 'Super-Admin' || req.user.role == 'Manager'){
         
@@ -389,7 +386,7 @@ router.get('/accounts/agents', ensureAuth, (req, res) => {
     }
 })
 
-router.get('/accounts/managers', ensureAuth, (req, res) => {
+router.get('/accounts/managers', ensureAuth, (req, res, next) => {
     
     if(req.user.role == 'Super-Admin'){
 
@@ -493,7 +490,7 @@ router.post('/accounts/create', ensureAuth, createAdmin)
 |
 */
 //search an account to fund using role as a param and email or mobile as the query string
-router.get('/fund/search/:role', ensureAuth, (req, res) => {
+router.get('/fund/search/:role', ensureAuth, (req, res, next) => {
       
     let type, name, min, max;
     if(req.params.role == 'Admins') {
@@ -674,10 +671,41 @@ router.post('/fund/accounts/:account_type', ensureAuth, fundAnyAccount)
 
 /*
 |================================================
-|Super Admins Funds Generation Post Router
+|Super Admins Funds Generation Router
 |================================================
 |
 */
+router.get('/funds/generate-fund', ensureAuth, (req, res, next) => {
+
+    if(req.user.role == 'Super-Admin'){
+        
+        async.parallel({
+            adminWallet: (callback) => {
+                AdminWallet.findOne({
+                    'wallet_id': req.user.mobile,
+                    'user_id': req.user._id
+                }).exec(callback);
+            },
+
+        }, (err, results) => {
+            if(err) return next(err)
+            else {
+                                
+                res.render('admins/fund/generate-fund', {
+                    adminWallet: results.adminWallet,
+                    mainAdmin: req.mainAdmin,
+                    companyStaff: req.companyStaff,                    
+                    helpers: req.helpers
+                });
+
+            }
+        })       
+    } else {
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
+    }
+})
+
 router.post('/gen-funds', ensureAuth, genFunds)
 
 
@@ -940,28 +968,109 @@ router.get('/commissions/received-commissions', ensureAuth, (req, res, next) => 
 router.get('/commissions/commissions-settings', ensureAuth, (req, res, next) => {
         
     if(req.user.role == 'Super-Admin'){
-        AdminWallet.findOne({
-            'wallet_id': req.user.mobile,
-            'user_id': req.user._id
-        }, (err, adminWallet) => {
+        
+        async.parallel({
+
+            adminWallet: (callback) => {
+                AdminWallet.findOne({
+                    'wallet_id': req.user.mobile,
+                    'user_id': req.user._id
+                }).exec(callback);
+            },
+                       
+            commissionsData: (callback) => {
+                CommissionSettings.findOne({}).exec(callback);
+            }
+
+        }, (err, results) => {
             if(err) return next(err)
             else {
-                
-                CommissionSettings.find({})
-                    .exec( (err, commissionSettings) => {
-                    if(err) return next(err);
-                    else {
-                        console.log(`directCommission: ${commissionSettings}`)
-                        
-                        res.render('admins/commissions/commissions-settings', {
-                            adminWallet: adminWallet,
-                            commissionSettings: commissionSettings,
-                            helpers: req.helpers         
-                        })
-                    }
-                })                
+                                
+                res.render('admins/commissions/commissions-settings', {
+                    adminWallet: results.adminWallet,
+                    mainAdmin: req.mainAdmin,
+                    companyStaff: req.companyStaff,
+                    commissionsData: results.commissionsData,
+                    helpers: req.helpers
+                });
+
             }
-        });        
+        });     
+    } else {
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
+    }
+})
+
+router.post('/commissions/update-agent-commission', ensureAuth, (req, res, next) => {
+    
+    req.checkBody('percentChargeOnAdmins', 'Percentage is required').notEmpty();
+    req.checkBody('cappedChaargeOnAdmins', 'Capped Amount is required').notEmpty();
+
+    let errors = req.validationErrors();
+    if(errors) {
+        console.log(`Validation Errors: ${JSON.stringify(errors)}`);
+        req.flash('error', errors);
+        res.redirect('back');
+    } 
+
+    if(req.user.role == 'Super-Admin'){
+        percentChargeOnAdmins = req.body.percentChargeOnAdmins;
+        cappedChargeOnAdmins = req.body.cappedChaargeOnAdmins;
+
+        CommissionSettings.update({}, {
+            $set: {
+                'on_agent.percent': percentChargeOnAdmins,
+                'on_agent.capped': cappedChargeOnAdmins,
+
+            }
+        }, (err) => {
+            if(err) return next(err)
+            else {
+                  
+                req.flash('successMsg', 'Agent Commissions Settings Updated Successfully');
+
+                res.redirect('back');
+
+            }
+        });     
+    } else {
+        req.flash('warningMsg', 'You are not authorized to view this page')
+        res.redirect("back")
+    }
+})
+
+router.post('/commissions/update-user-commission', ensureAuth, (req, res, next) => {
+    
+    req.checkBody('percentCharge', 'Percentage is required').notEmpty();
+    req.checkBody('cappedChaarge', 'Capped Amount is required').notEmpty();
+
+    let errors = req.validationErrors();
+    if(errors) {
+        console.log(`Validation Errors: ${JSON.stringify(errors)}`);
+        req.flash('error', errors);
+        res.redirect('back');
+    } 
+
+    if(req.user.role == 'Super-Admin'){
+        percentCharge = req.body.percentCharge;
+        cappedChaarge = req.body.cappedChaarge;
+
+        CommissionSettings.update({}, {
+            $set: {
+                'standard.percent': percentCharge,
+                'standard.capped': cappedChaarge,
+            }
+        }, (err) => {
+            if(err) return next(err)
+            else {
+                  
+                req.flash('successMsg', 'User Commissions Settings Updated Successfully');
+
+                res.redirect('back');
+
+            }
+        });     
     } else {
         req.flash('warningMsg', 'You are not authorized to view this page')
         res.redirect("back")
@@ -1788,7 +1897,7 @@ function fundAnyAccount(req, res, next) {
                             }                    
                         }
 
-                        else{
+                        else {
                             req.flash('warningMsg', `You can't fund this person`);
                             res.redirect('back');  
                         }

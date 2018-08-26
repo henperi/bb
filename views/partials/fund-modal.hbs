@@ -1,0 +1,46 @@
+<!-- #modal-dialog -->
+                                        <div class="modal fade" id="edit_{{this.mobile}}">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h4 class="modal-title">Fund {{ this.firstname }} <span class="badge badge-info">{{ this.role }}</span></h4>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <form action="admins/fund/accounts/{{ this.role }}" method="POST" class="margin-bottom-0">
+                                                            <div class="form-group m-b-20">
+                                                                <label for="enter_amount">
+                                                                    Enter Amount 
+                                                                </label>
+                                                                <input type="float" name="fund_amount" class="form-control form-control-lg" placeholder="Enter Amount" required />
+                                                            </div>
+
+                                                            <div class="form-group m-b-20 d-none">
+                                                                <input type="text" name="account_type" class="form-control form-control-lg" value="{{ this.role }}" required />
+                                                                <input type="text" name="wallet_id" class="form-control form-control-lg" value="{{ this.wallets.[0].wallet_id }}" required />
+                                                                <input type="text" name="u_id" class="form-control form-control-lg" value="{{ this._id }}" required />
+                                                            </div>
+
+                                                            <div class="form-group m-b-20">
+                                                                <label for="remember_checkbox">
+                                                                    Type a remark for this funding (optional) 
+                                                                </label>
+                                                                <textarea name="remark" class="form-control form-control-lg" placeholder="Enter remark for this funds generation" rows="3"></textarea>
+                                                            </div>
+                                                            <div class="checkbox checkbox-css m-b-20">
+                                                                <input type="checkbox" id="remember_checkbox" /> 
+                                                                <label for="remember_checkbox">
+                                                                    Acknowledge action 
+                                                                </label>
+                                                            </div>
+                                                            <div class="login-buttons">
+                                                                <button type="submit" class="btn btn-success btn-block btn-lg">Fund {{ this.role }}</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <a href="javascript:;" class="btn btn-white btn-block btn-lg" data-dismiss="modal">Cancel</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>

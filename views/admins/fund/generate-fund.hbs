@@ -1,0 +1,78 @@
+        <!-- begin #content -->
+		<div id="content" class="content">
+			<!-- begin breadcrumb -->
+			<ol class="breadcrumb pull-right">
+				<li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+				<li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
+				<li class="breadcrumb-item active">Dashboard v2</li>
+			</ol>
+			<!-- end breadcrumb -->
+			<!-- begin page-header -->
+			<h1 class="page-header">{{user.role}}'s Dashboard</small></h1>{{admin.firstname}}
+			{{> flash}}
+			<!-- end page-header -->
+			<!-- begin row -->
+			<div class="row">
+
+				
+			    <!-- begin col-3 -->
+				
+			    <div class="col-lg-4 col-md-6">
+			        <div class="widget widget-stats bg-gradient-teal">
+						<div class="stats-icon stats-icon-lg"><i class="fa fa-globe fa-fw"></i></div>
+			        	
+			        	<div class="stats-content">
+							<div class="stats-title">BEWLA BALLANCE</div>
+							<div class="stats-number"> &#8358; {{formatCash adminWallet.ballance}}</div>
+						</div>
+			        </div>
+			    </div>
+				
+			    <!-- end col-3 -->
+				
+			</div>
+			<!-- end row -->
+
+			<!-- begin row -->
+			<div class="row">
+				<div class="col-lg-6">
+					<div class="panel panel-inverse" data-sortable-id="ui-widget-2">
+						<div class="panel-heading ui-sortable-handle">
+							<h4 class="panel-title">Generate Fund</h4>
+						</div>
+						<div class="panel-body">
+                            <form action="admins/gen-funds" method="POST" class="margin-bottom-0">
+                                <div class="form-group m-b-20">
+                                    <label for="remember_checkbox">
+                                        Enter Amount 
+                                    </label>
+                                    <input type="number" name="gen_amount" class="form-control form-control-lg" placeholder="Enter Amount" required />
+                                </div>
+                                <div class="form-group m-b-20">
+                                    <label for="remember_checkbox">
+                                        Type a remark for this generation 
+                                    </label>
+                                    <textarea name="remark" class="form-control form-control-lg" placeholder="Enter remark for this funds generation" rows="3"></textarea>
+                                </div>
+                                <div class="checkbox checkbox-css m-b-20">
+                                    <input type="checkbox" id="remember_checkbox" /> 
+                                    <label for="remember_checkbox">
+                                        Acknowledge action 
+                                    </label>
+                                </div>
+                                <div class="login-buttons">
+                                    <button type="submit" class="btn btn-success btn-block btn-lg">Generate</button>
+                                </div>
+                            </form>
+						</div>
+						<div class="hljs-wrapper">
+						
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- end row -->
+		</div>
+		<!-- end #content -->
+
+		
