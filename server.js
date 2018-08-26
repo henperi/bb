@@ -24,22 +24,22 @@ const sessionStore = require('sessionstore');
 const configDB = require('./config/database');
 
 // //Database Local Connection
-mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
-    () => {console.log('Database is connected') },
-    err => { console.log('Can not connect to the database:' +err)
-});
-mongoose.Promise = global.Promise;
+// mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
+//     () => {console.log('Database is connected') },
+//     err => { console.log('Can not connect to the database:' +err)
+// });
+// mongoose.Promise = global.Promise;
 
 //Database Remote Connection
 // mongoose db connection()
-// mongoose.connect(configDB.remote_url, { useNewUrlParser: true }, err => {
-//     if(err){
-//         console.log('Error: ' + err)
-//     } else {
-//         console.log('Connected to mogo db');
-//     }
-// });
-// mongoose.Promise = global.Promise;
+mongoose.connect(configDB.remote_url, { useNewUrlParser: true }, err => {
+    if(err){
+        console.log('Error: ' + err)
+    } else {
+        console.log('Connected to mogo db');
+    }
+});
+mongoose.Promise = global.Promise;
 
 
 //Setup the express Application
@@ -61,9 +61,9 @@ app.use(session({
     secret: 'some_random_generated_const_string',
     resave: true,
     saveUninitialized: true,
-    store: sessionStore.createSessionStore({
-        type: 'mongodb',
-    })
+    // store: sessionStore.createSessionStore({
+    //     type: 'mongodb',
+    // })
 }));
 
 //Express Flash and Messaging Middleware
