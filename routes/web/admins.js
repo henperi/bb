@@ -151,16 +151,30 @@ router.post('/signup', (req, res) => {
                                         let newAdminWallet = new AdminWallet({
                                             wallet_id: mobile,
                                             user_id: registeredAdmin._id, 
+                                            wallet_type: "Super-Admin", 
                                         });
-                                        newAdminWallet.save( (err, registerdWallet) => {
-                                            if(err) throw err;
-                                            else {
-                                                console.log(`AdminWallet saved to the database ${registerdWallet}`);
-                                            }
+
+                                        let newCommissionSettings = new CommissionSettings({                                                                        
+                                            'standard.percent': 3,
+                                            'standard.capped': 50,    
+
+                                            'on_agent.percent': 2,
+                                            'on_agent.capped': 30,                                            
+                                        });
+                                        
+                                        newAdminWallet.save()
+                                        .then(newCommissionSettings.save())
+                                        .then( (save) => {
+                                            
+                                            req.flash('successMsg', 'You have registered successfully, Login to your account now');
+                                            res.redirect('login');
+
                                         })
+                                        .catch( (err) => {
+                                            console.log('err')
+                                            if(err) return next(err);
+                                        });
         
-                                        req.flash('successMsg', 'You have registered successfully, Login to your account now');
-                                        res.redirect('login');
                                     }
                                 });
 
@@ -258,18 +272,92 @@ router.get('/dashboard', ensureAuth, (req, res, next) => {
             
             commissionsData: (callback) => {
                 CommissionSettings.findOne({}).exec(callback);
+            },
+
+            directCommission: (callback) => {
+                AdminCommissionHistory.aggregate([
+                    {
+                        $match: {"commissionsData.received_by": req.user._id} 
+                    },
+                    {
+                        $group: {
+                            _id: "commissionsData.recieved_by",
+                            total: { $sum: "$commissionsData.com_received" }
+                        }
+                    },
+                    {
+                      	$project: {_id: 0, total: 1}
+                    }
+                ]).exec(callback)
+            },
+
+            indirectCommission: (callback) => {
+                AgentCommissionHistory.aggregate([
+                    {
+                        $match: {"commissionsData.com_received_by_admin.received_by": req.user._id} 
+                    },
+                    {
+                        $group: {
+                            _id: "commissionsData.com_received_by_admin.recieved_by",
+                            total: { $sum: "$commissionsData.com_received_by_admin.amount" }
+                        }
+                    },
+                    {
+                      	$project: {_id: 0, total: 1}
+                    }
+                ]).exec(callback)
+            },
+            
+            agentCommission: (callback) => {
+                AgentCommissionHistory.aggregate([
+                    {
+                        $match: {"commissionsData.com_received_by_agent.received_by": req.user._id} 
+                    },
+                    {
+                        $group: {
+                            _id: "commissionsData.com_received_by_agent.recieved_by",
+                            total: { $sum: "$commissionsData.com_received_by_agent.amount" }
+                        }
+                    },
+                    {
+                      	$project: {_id: 0, total: 1}
+                    }
+                ]).exec(callback)
             }
 
         }, (err, results) => {
             if(err) return next(err)
             else {
-                                
+                
+                let directCommission = 0;
+                let indirectCommission = 0;
+                let agentCommission = 0;
+
+                if(results.directCommission[0]) {
+                    console.log('directCommission: ', results.directCommission[0].total);
+                    directCommission = results.directCommission[0].total
+                }
+                if(results.indirectCommission[0]) {
+                    console.log('indirectCommission: ', results.indirectCommission[0].total);
+                    indirectCommission = results.indirectCommission[0].total
+                }
+                if(results.agentCommission[0]) {
+                    console.log('agentCommission: ', results.agentCommission[0].total);
+                    agentCommission = results.agentCommission[0].total
+                }
+
+                // console.log('agentCommission: ',agentCommission)
+
+                totalMainAdminCommission = directCommission + indirectCommission;
+
                 res.render('admins/dashboard', {
                     adminWallet: results.adminWallet,
                     mainAdmin: req.mainAdmin,
                     companyStaff: req.companyStaff,
                     usersData: results.usersData,
                     commissionsData: results.commissionsData,
+                    totalcommission: totalMainAdminCommission,
+                    totalagentCommission: agentCommission,
                     helpers: req.helpers
                 });
 
@@ -320,8 +408,7 @@ router.get('/accounts/users', ensureAuth, (req, res, next) => {
             
             if(err) return next(err);
             else {
-                // console.log(usersData);
-                // console.log(usersData[0].wallets[0].wallet_status); usersData.[0].wallets.[0].ballance
+                
                 res.render('admins/accounts/users', {
                     adminWallet: results.adminWallet,
                     mainAdmin: req.mainAdmin,
@@ -1018,22 +1105,35 @@ router.post('/commissions/update-agent-commission', ensureAuth, (req, res, next)
         percentChargeOnAdmins = req.body.percentChargeOnAdmins;
         cappedChargeOnAdmins = req.body.cappedChaargeOnAdmins;
 
-        CommissionSettings.update({}, {
-            $set: {
-                'on_agent.percent': percentChargeOnAdmins,
-                'on_agent.capped': cappedChargeOnAdmins,
+        if(isNaN(percentChargeOnAdmins)) {
+            req.flash('errorMsg', 'Percentage must be a number');
 
-            }
-        }, (err) => {
-            if(err) return next(err)
-            else {
-                  
-                req.flash('successMsg', 'Agent Commissions Settings Updated Successfully');
+            res.redirect('back');
+        } 
+        else if(isNaN(cappedChargeOnAdmins)) {
+            req.flash('errorMsg', 'Capped Amount must be a number');
 
-                res.redirect('back');
+            res.redirect('back');
+        } else {
+            CommissionSettings.update({}, {
+                $set: {
+                    'on_agent.percent': percentChargeOnAdmins,
+                    'on_agent.capped': cappedChargeOnAdmins,
+    
+                }
+            }, (err) => {
+                if(err) return next(err)
+                else {
+                      
+                    req.flash('successMsg', 'Agent Commissions Settings Updated Successfully');
+    
+                    res.redirect('back');
+    
+                }
+            });     
 
-            }
-        });     
+        }
+
     } else {
         req.flash('warningMsg', 'You are not authorized to view this page')
         res.redirect("back")
@@ -1056,21 +1156,33 @@ router.post('/commissions/update-user-commission', ensureAuth, (req, res, next) 
         percentCharge = req.body.percentCharge;
         cappedChaarge = req.body.cappedChaarge;
 
-        CommissionSettings.update({}, {
-            $set: {
-                'standard.percent': percentCharge,
-                'standard.capped': cappedChaarge,
-            }
-        }, (err) => {
-            if(err) return next(err)
-            else {
-                  
-                req.flash('successMsg', 'User Commissions Settings Updated Successfully');
+        if(isNaN(percentCharge)) {
+            req.flash('errorMsg', 'Percentage must be a number');
 
-                res.redirect('back');
+            res.redirect('back');
+        } 
+        else if(isNaN(cappedChaarge)) {
+            req.flash('errorMsg', 'Capped Amount must be a number');
 
-            }
-        });     
+            res.redirect('back');
+        } else {
+            CommissionSettings.update({}, {
+                $set: {
+                    'standard.percent': percentCharge,
+                    'standard.capped': cappedChaarge,
+                }
+            }, (err) => {
+                if(err) return next(err)
+                else {
+                      
+                    req.flash('successMsg', 'User Commissions Settings Updated Successfully');
+    
+                    res.redirect('back');
+    
+                }
+            });     
+
+        }
     } else {
         req.flash('warningMsg', 'You are not authorized to view this page')
         res.redirect("back")

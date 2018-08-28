@@ -10,14 +10,14 @@ const AdminCommissionHistorySchema = mongoose.Schema({
     
     commissionsData: {
         com_received: {
-            type: String,
+            type: Number,
             required: true
         },
         received_by: {
-            type: String,
+            type: Schema.Types.ObjectId,
+            ref: Admin,
             required: true
-        },
-        
+        },        
         com_charged: {
             type: Number,
             required: true

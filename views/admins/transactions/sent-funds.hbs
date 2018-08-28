@@ -33,13 +33,16 @@
 											{{!-- <th>#</th> --}}
 											<th>Amount</th>
 											<th>Sent To</th>
+											{{#if companyStaff}}
 											<th>Received Commission</th>
+											{{/if}}
 											<th>Receiver Type</th>
 											<th>Date</th>
 											<th>Remark</th>
 										</tr>
 									</thead>
 									<tbody>
+										{{#if companyStaff}}
 										{{#each sentFunds }}
 											<tr>
                                                 {{!-- <td></td> --}}
@@ -51,6 +54,21 @@
 												<td>{{ this.remark }}</td>
 											</tr>											
 										{{/each}}
+										{{/if}}
+
+										{{#unless companyStaff}}
+										{{#each sentFunds }}
+											<tr>
+                                                {{!-- <td></td> --}}
+												<td>&#8358;{{formatCash  this.amount }}</td>
+												<td>{{this.receiver_name}} <b>({{ this.receiver_wallet_id }})</b></td>
+												{{!-- <td>&#8358;{{this.commission }}</td> --}}
+												<td>{{this.receiver_role }}</td>
+												<td>{{formatDate this.createdAt }}</td>
+												<td>{{ this.remark }}</td>
+											</tr>											
+										{{/each}}
+										{{/unless}}
 									</tbody>
 								</table>								
 							</div>

@@ -12,7 +12,8 @@ const AgentCommissionHistorySchema = mongoose.Schema({
 
         com_received_by_admin: {
             received_by: {
-                type: String,
+                type: Schema.Types.ObjectId,
+                ref: Admin,
                 required: true
             },
             amount: {
@@ -23,7 +24,8 @@ const AgentCommissionHistorySchema = mongoose.Schema({
 
         com_received_by_agent: {
             received_by: {
-                type: String,
+                type: Schema.Types.ObjectId,
+                ref: Admin,
                 required: true
             },
             amount: {
