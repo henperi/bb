@@ -18,7 +18,9 @@ const flash = require('connect-flash');
 const passport = require('passport');
 const mongoose = require('mongoose');
 
-const sessionStore = require('sessionstore');
+// const sessionStore = require('sessionstore');
+
+var MongoDBStore = require('connect-mongodb-session')(session);
 
 //Bring in the configured database
 const configDB = require('./config/database');
@@ -29,17 +31,34 @@ mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
     err => { console.log('Can not connect to the database:' +err)
 });
 mongoose.Promise = global.Promise;
+var store = new MongoDBStore({
+    uri: configDB.local_url,
+    collection: 'mySessions'
+});
 
 //Database Remote Connection
 // mongoose db connection()
-// mongoose.connect(configDB.remote_url, { useNewUrlParser: true }, err => {
-//     if(err){
-//         console.log('Error: ' + err)
-//     } else {
-//         console.log('Connected to mogo db');
-//     }
-// });
-// mongoose.Promise = global.Promise;
+mongoose.connect(configDB.remote_url, { useNewUrlParser: true }, err => {
+    if(err){
+        console.log('Error: ' + err)
+    } else {
+        console.log('Connected to mogo db');
+    }
+});
+mongoose.Promise = global.Promise;
+var store = new MongoDBStore({
+    uri: configDB.remote_url,
+    collection: 'mySessions'
+});
+
+store.on('connected', function() {
+    store.client; // The underlying MongoClient object from the MongoDB driver
+});
+// Catch errors
+store.on('error', function(error) {
+    assert.ifError(error);
+    assert.ok(false);
+});
 
 
 //Setup the express Application
@@ -61,6 +80,7 @@ app.use(session({
     secret: 'some_random_generated_const_string',
     resave: true,
     saveUninitialized: true,
+    store: store,
     // store: sessionStore.createSessionStore({
     //     type: 'mongodb',
     // })
