@@ -26,18 +26,17 @@ var MongoDBStore = require('connect-mongodb-session')(session);
 const configDB = require('./config/database');
 
 // //Database Local Connection
-mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
-    () => {console.log('Database is connected') },
-    err => { console.log('Can not connect to the database:' +err)
-});
-mongoose.Promise = global.Promise;
-var store = new MongoDBStore({
-    uri: configDB.local_url,
-    collection: 'mySessions'
-});
+// mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
+//     () => {console.log('Database is connected') },
+//     err => { console.log('Can not connect to the database:' +err)
+// });
+// mongoose.Promise = global.Promise;
+// var store = new MongoDBStore({
+//     uri: configDB.local_url,
+//     collection: 'mySessions'
+// });
 
 //Database Remote Connection
-// mongoose db connection()
 mongoose.connect(configDB.remote_url, { useNewUrlParser: true }, err => {
     if(err){
         console.log('Error: ' + err)
@@ -56,8 +55,9 @@ store.on('connected', function() {
 });
 // Catch errors
 store.on('error', function(error) {
-    assert.ifError(error);
-    assert.ok(false);
+    // assert.ifError(error);
+    // assert.ok(false);
+    if(error) throw error
 });
 
 
