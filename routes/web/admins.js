@@ -72,7 +72,6 @@ router.get('/signup', redirectIfAuth, (req, res) => {
     res.render('admins/signup', {
         layout: 'reg-log-layout',
         title: 'Admin',
-        // message: req.flash(message) 
     });
 });
 
@@ -100,8 +99,7 @@ router.post('/signup', (req, res) => {
 
     if(errors){
         console.log(`Validation Errors: ${JSON.stringify(errors)}`);
-        req.flash('error', errors);
-        res.redirect('signup');
+        return res.status(400).send({'errors': errors});
     } else {
         emailQuery = {email: email};
         

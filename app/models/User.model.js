@@ -1,11 +1,12 @@
 //app/models/User.model.js
 
 //Bring in the essentials
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 // const bcrypt = require('bcryptjs');
 
 //Define the admin schema model
-const userSchema = mongoose.Schema({
+const userSchema = mongoose.Schema(
+  {
     firstname: String,
     lastname: String,
     mobile: String,
@@ -13,19 +14,25 @@ const userSchema = mongoose.Schema({
     password: String,
     role: String,
     created_by: {
-        type: String,
-        required: false
+      type: String,
+      required: false
     },
     p_check: {
-        type: String,
-        required: false
+      type: String,
+      required: false
+    },
+    pin: {
+      type: Number,
+      required: false
     }
-}, {
+  },
+  {
     timestamps: {
-        createdAt: 'createdAt',
-        updatedAt: 'updatedAt'
+      createdAt: "createdAt",
+      updatedAt: "updatedAt"
     }
-});
+  }
+);
 
 //admin methods===========================================================
 //Generate Bcrypt hash
@@ -38,6 +45,5 @@ const userSchema = mongoose.Schema({
 //     return bcrypt.compareSync(password, this.password);
 // };
 
-
 // create the model for the admins and expose it to our app
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

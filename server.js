@@ -26,29 +26,29 @@ var MongoDBStore = require('connect-mongodb-session')(session);
 const configDB = require('./config/database');
 
 // //Database Local Connection
-// mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
-//     () => {console.log('Database is connected') },
-//     err => { console.log('Can not connect to the database:' +err)
-// });
-// mongoose.Promise = global.Promise;
-// var store = new MongoDBStore({
-//     uri: configDB.local_url,
-//     collection: 'mySessions'
-// });
-
-//Database Remote Connection
-mongoose.connect(configDB.remote_url, { useNewUrlParser: true }, err => {
-    if(err){
-        console.log('Error: ' + err)
-    } else {
-        console.log('Connected to mogo db');
-    }
+mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
+    () => {console.log('Database is connected') },
+    err => { console.log('Can not connect to the database:' +err)
 });
 mongoose.Promise = global.Promise;
 var store = new MongoDBStore({
-    uri: configDB.remote_url,
+    uri: configDB.local_url,
     collection: 'mySessions'
 });
+
+//Database Remote Connection
+// mongoose.connect(configDB.remote_url, { useNewUrlParser: true }, err => {
+//     if(err){
+//         console.log('Error: ' + err)
+//     } else {
+//         console.log('Connected to mogo db');
+//     }
+// });
+// mongoose.Promise = global.Promise;
+// var store = new MongoDBStore({
+//     uri: configDB.remote_url,
+//     collection: 'mySessions'
+// });
 
 store.on('connected', function() {
     store.client; // The underlying MongoClient object from the MongoDB driver
@@ -81,9 +81,6 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     store: store,
-    // store: sessionStore.createSessionStore({
-    //     type: 'mongodb',
-    // })
 }));
 
 //Express Flash and Messaging Middleware
@@ -138,10 +135,12 @@ app.set('view engine', '.hbs');
 
 //Routes =================================================================
 const adminRoute = require('./routes/web/admins');
+const userRoute = require('./routes/api/users');
 app.use('/admins', adminRoute);
+app.use('/api/users', userRoute);
 
-app.use('/', (req, res, next) => {
-    res.send("landing page");
+app.use('', (req, res, next) => {
+    res.send("404 page");
 });
 
 

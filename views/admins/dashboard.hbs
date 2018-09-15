@@ -108,8 +108,8 @@
 												<td>{{ this.firstname }} {{ this.lastname }}</td>
 												<td>{{ this.mobile }}</td>
 												<td>{{ this.email }}</td>
-												<td>{{ this.account_type }}</td>
-												<td>{{this.wallets.[0].ballance}}</td>
+												<td>{{ this.role }}</td>
+												<td>{{formatCash this.wallets.[0].ballance}}</td>
 												<td class="with-btn" nowrap>
 													<a href="#edit_{{this.mobile}}" class="btn btn-sm btn-primary width-60 m-r-2" data-toggle="modal">Fund</a>
 													<a href="admins/edit/{{this.account_type}}/{{this.email}}" class="btn btn-sm btn-info width-60 m-r-2">Edit</a>
