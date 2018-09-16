@@ -156,7 +156,7 @@ const usersController = {
         if (!results.findAccount) {
           return res.status(404).json({
             success: false,
-            message: "This email is invalid"
+            message: "This email account does not exist"
           });
         } else {
           // console.log(results);
