@@ -37,12 +37,6 @@ const usersController = {
     const account_type = "User";
     const password = req.body.password;
 
-    if (mobile.charAt(0) != "0") {
-      return res.status(409).json({
-        success: false,
-        message: "Mobile number must start with a zero(0) i.e 08067272176"
-      });
-    }
     if (isNaN(mobile)) {
       return res.status(409).json({
         success: false,
@@ -52,6 +46,12 @@ const usersController = {
       return res.status(409).json({
         success: false,
         message: "Your mobile number must be 11 digits only (e.g 08033444555)"
+      });
+    }
+    if (mobile.charAt(0) != "0") {
+      return res.status(409).json({
+        success: false,
+        message: "Mobile number must start with a zero(0) i.e 08067272176"
       });
     } else {
       emailQuery = { email: email };
