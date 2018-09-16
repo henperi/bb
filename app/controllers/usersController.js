@@ -37,6 +37,12 @@ const usersController = {
     const account_type = "User";
     const password = req.body.password;
 
+    if (mobile.charAt(0) !== 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Mobile number must start with a zero(0) i.e 08067272176"
+      });
+    }
     if (isNaN(mobile)) {
       return res.status(409).json({
         success: false,
