@@ -14,7 +14,6 @@ const usersController = {
    *
    */
   attemptSignup(req, res) {
-    // req.checkBody("username", "username is required").notEmpty();
     req.checkBody("email", "Email is required").notEmpty();
     req.checkBody("email", "Email is not valid").isEmail();
     req.checkBody("password", "Password is required").notEmpty();
@@ -342,6 +341,16 @@ const usersController = {
    *
    */
   payUser(req, res) {
+    req.checkBody("pay_amount", "Amount is required").notEmpty();
+    req.checkBody("receiver_id", "Receiver ID is required").notEmpty();
+    req.checkBody("mobile", "Receiver mobile is required").notEmpty();
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(409).json({ errors });
+    }
+
     const pay_amount = req.body.pay_amount;
     const remark = req.body.remark || null;
     const min_amount = 0;
