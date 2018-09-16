@@ -40,7 +40,7 @@ const usersController = {
     if (isNaN(mobile)) {
       return res.status(409).json({
         success: false,
-        message: "Please signup with a valid number"
+        message: "Please signup with a valid number, numeric characters only"
       });
     } else if (mobile.length != 11) {
       return res.status(409).json({
