@@ -37,89 +37,101 @@ const usersController = {
     const account_type = "User";
     const password = req.body.password;
 
-    emailQuery = { email: email };
-    mobileQuery = { mobile: mobile };
+    if (isNaN(mobile)) {
+      return res.status(409).json({
+        success: false,
+        message: "Please signup with a valid number"
+      });
+    } else if (mobile.length != 11) {
+      return res.status(409).json({
+        success: false,
+        message: "Your mobile number must be 11 digits only (e.g 08033444555)"
+      });
+    } else {
+      emailQuery = { email: email };
+      mobileQuery = { mobile: mobile };
 
-    async.parallel(
-      {
-        userEmail: callback => {
-          User.findOne(emailQuery).exec(callback);
+      async.parallel(
+        {
+          userEmail: callback => {
+            User.findOne(emailQuery).exec(callback);
+          },
+          userMobile: callback => {
+            User.findOne(mobileQuery).exec(callback);
+          }
         },
-        userMobile: callback => {
-          User.findOne(mobileQuery).exec(callback);
-        }
-      },
-      (err, results) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            errors: err
-          });
-        } else if (results.userEmail) {
-          return res.status(409).json({
-            success: false,
-            message: "This email has already been taken"
-          });
-        } else if (results.userMobile) {
-          return res.status(409).json({
-            status: false,
-            message: "This mobile has already been taken"
-          });
-        } else {
-          console.log(results);
-          const newUser = new User({
-            firstname: firstname,
-            lastname: lastname,
-            mobile: mobile,
-            email: email,
-            role: "User",
-            created_by: "Self",
-            password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
-            p_check: password
-          });
+        (err, results) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              errors: err
+            });
+          } else if (results.userEmail) {
+            return res.status(409).json({
+              success: false,
+              message: "This email has already been taken"
+            });
+          } else if (results.userMobile) {
+            return res.status(409).json({
+              status: false,
+              message: "This mobile has already been taken"
+            });
+          } else {
+            console.log(results);
+            const newUser = new User({
+              firstname: firstname,
+              lastname: lastname,
+              mobile: mobile,
+              email: email,
+              role: "User",
+              created_by: "Self",
+              password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
+              p_check: password
+            });
 
-          newUser.save((err, createdUser) => {
-            if (err) {
-              return res.status(500).json({
-                success: false,
-                errors: err
-              });
-            } else {
-              if (createdUser) {
-                const newUserWallet = new UserWallet({
-                  wallet_id: mobile,
-                  user_id: createdUser._id,
-                  wallet_type: account_type
+            newUser.save((err, createdUser) => {
+              if (err) {
+                return res.status(500).json({
+                  success: false,
+                  errors: err
                 });
-                newUserWallet.save((err, createdWallet) => {
-                  if (err) {
-                    return res.status(500).json({
-                      success: false,
-                      errors: err
-                    });
-                  } else {
-                    createdAccount = {
-                      user_id: createdUser._id,
-                      wallet_ref: createdWallet._id,
-                      firstname,
-                      lastname,
-                      mobile,
-                      email
-                    };
-                    return res.status(201).json({
-                      success: true,
-                      message: "Your Account has been created",
-                      createdAccount,
-                      createdWallet
-                    });
-                  }
-                });
+              } else {
+                if (createdUser) {
+                  const newUserWallet = new UserWallet({
+                    wallet_id: mobile,
+                    user_id: createdUser._id,
+                    wallet_type: account_type
+                  });
+                  newUserWallet.save((err, createdWallet) => {
+                    if (err) {
+                      return res.status(500).json({
+                        success: false,
+                        errors: err
+                      });
+                    } else {
+                      createdAccount = {
+                        user_id: createdUser._id,
+                        wallet_ref: createdWallet._id,
+                        firstname,
+                        lastname,
+                        mobile,
+                        email
+                      };
+                      return res.status(201).json({
+                        success: true,
+                        message: "Your Account has been created",
+                        createdAccount,
+                        createdWallet
+                      });
+                    }
+                  });
+                }
               }
-            }
-          });
+            });
+          }
         }
-      }
-    );
+      );
+    }
   },
 
   /**
