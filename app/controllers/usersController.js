@@ -82,7 +82,7 @@ const usersController = {
               message: "This mobile has already been taken"
             });
           } else {
-            console.log(results);
+            // console.log(results);
             const newUser = new User({
               firstname: firstname,
               lastname: lastname,
@@ -115,13 +115,22 @@ const usersController = {
                       });
                     } else {
                       createdAccount = {
+                        // wallet_ref: createdWallet._id,
                         user_id: createdUser._id,
-                        wallet_ref: createdWallet._id,
                         firstname,
                         lastname,
                         mobile,
                         email
                       };
+
+                      createdWallet = {
+                        wallet_id: createdWallet.wallet_id,
+                        user_id: createdWallet.user_id,
+                        wallet_type: createdWallet.wallet_type,
+                        ballance: createdWallet.ballance,
+                        wallet_status: createdWallet.wallet_status
+                      };
+
                       return res.status(201).json({
                         success: true,
                         message: "Your Account has been created",
@@ -224,7 +233,7 @@ const usersController = {
    *
    */
   getUserData(req, res) {
-    console.log(req.userToken);
+    // console.log(req.userToken);
     const userToken = req.userToken;
     const user_id = userToken.user_id;
     const wallet_id = userToken.wallet_id;
@@ -269,7 +278,31 @@ const usersController = {
             email,
             createdAt
           } = results.findAccount;
-          return res.status(302).json({
+
+          if (results.findWallet.pin_status == "unset") {
+            return res.status(400).json({
+              success: true,
+              message: "Please Setup Your Payment Pin First",
+              userData: {
+                user_id: results.findAccount._id,
+                firstname,
+                lastname,
+                mobile,
+                email,
+                createdAt
+              },
+              userWallet: {
+                user_id: results.findWallet.user_id,
+                wallet_id: results.findWallet.wallet_id,
+                wallet_status: results.findWallet.wallet_status,
+                ballance: results.findWallet.ballance,
+                wallet_type: results.findWallet.wallet_type,
+                pin_status: results.findWallet.pin_status
+              }
+            });
+          }
+
+          return res.status(200).json({
             success: true,
             message: "Fetched user data successfully",
             userData: {
@@ -322,7 +355,7 @@ const usersController = {
         } else {
           console.log(results.findAccount);
           const { _id, firstname, lastname, mobile } = results.findAccount;
-          return res.status(302).json({
+          return res.status(200).json({
             success: true,
             message: "Receiver account found",
             receiverData: {
@@ -344,6 +377,7 @@ const usersController = {
     req.checkBody("pay_amount", "Amount is required").notEmpty();
     req.checkBody("receiver_id", "Receiver ID is required").notEmpty();
     req.checkBody("mobile", "Receiver mobile is required").notEmpty();
+    req.checkBody("pin", "Your payment pin is required").notEmpty();
 
     const errors = req.validationErrors();
 
@@ -351,9 +385,11 @@ const usersController = {
       return res.status(409).json({ errors });
     }
 
-    const pay_amount = req.body.pay_amount;
-    const remark = req.body.remark || null;
     const min_amount = 0;
+    const remark = req.body.remark || null;
+
+    const pay_amount = req.body.pay_amount;
+    const pin = req.body.pin;
 
     const receiver_id = req.body.receiver_id;
     const receiver_wallet_id = req.body.mobile;
@@ -385,6 +421,7 @@ const usersController = {
       };
 
       UserWallet.findOne(payerWalletQuery, (err, payerWallet) => {
+        // console.log(payerWallet);
         if (err) {
           return res.status(400).json({
             success: false,
@@ -398,6 +435,18 @@ const usersController = {
               "Your wallet is inaccessible at the moment, try again later."
           });
         } else {
+          if (payerWallet.pin_status != "set") {
+            return res.status(400).json({
+              success: false,
+              message: `Your need to setup your pin `
+            });
+          }
+          if (pin != payerWallet.pin) {
+            return res.status(400).json({
+              success: false,
+              message: `Your pin is invalid `
+            });
+          }
           if (pay_amount > payerWallet.ballance) {
             return res.status(400).json({
               success: false,
@@ -427,12 +476,13 @@ const usersController = {
                   if (!result.receiverWallet) {
                     return res.status(400).json({
                       success: false,
-                      message: `Issue with this reciever account, the account might be invalid or inaccessible at the momemnt`
+                      message: `Issue with this reciever account, the account might be invalid or inaccessible at the moment.`,
+                      developer_msg: `Ensure the receiver_id and mobile sent belongs to the same receiving user. fetch the receivers data from api/users/search/pay endpoint`
                     });
                   } else if (!result.foundReceiver) {
                     return res.status(400).json({
                       success: false,
-                      message: `Issue with this reciever account, the receiver details are inaccurate`
+                      message: `Issue with this reciever account, the receiver mobile could not be found`
                     });
                   } else {
                     const foundReceiver_fullname =
@@ -497,6 +547,192 @@ const usersController = {
               }
             );
           }
+        }
+      });
+    }
+  },
+  /**
+   *
+   */
+  setPin(req, res) {
+    req.checkBody("pin", "Pin is required").notEmpty();
+    req
+      .checkBody(
+        "pin_confirmation",
+        "Pin Confirmation does not match with supplied pin"
+      )
+      .equals(req.body.pin);
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(409).json({ errors });
+    }
+
+    const pin = req.body.pin;
+
+    const userToken = req.userToken;
+    const user_id = userToken.user_id;
+    const wallet_id = userToken.wallet_id;
+
+    const pin_size = 4;
+
+    if (isNaN(pin)) {
+      return res.status(400).json({
+        success: false,
+        message: "Pin is not valid, it must be a number"
+      });
+    } else if (pin.length != pin_size) {
+      return res.status(400).json({
+        success: false,
+        message: "Your pin must be a 4 digit number"
+      });
+    } else {
+      userQuery = {
+        user_id,
+        wallet_id
+      };
+
+      UserWallet.findOne(userQuery, (err, userWallet) => {
+        if (err) {
+          return res.status(400).json({
+            success: false,
+            error: err
+          });
+        }
+        if (!userWallet) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Your wallet is inaccessible at the moment, try again later or contact an Admin"
+          });
+        }
+        if (userWallet.pin_status == "set") {
+          return res.status(400).json({
+            success: false,
+            message: "Your pin has already been setup"
+          });
+        } else {
+          async.parallel(
+            {
+              userWalletUpdate: callback => {
+                UserWallet.update(userQuery, {
+                  $set: {
+                    pin: pin,
+                    pin_status: "set"
+                  }
+                }).exec(callback);
+              }
+            },
+            err => {
+              // console.log('after async: ',result);
+              if (err) {
+                return res.status(400).json({
+                  success: false,
+                  error: err
+                });
+              } else {
+                return res.status(200).json({
+                  success: true,
+                  message: `Pin Setup Successfully`
+                });
+              }
+            }
+          );
+        }
+      });
+    }
+  },
+  /**
+   *
+   */
+  updatePin(req, res) {
+    req.checkBody("old_pin", "Pin is required").notEmpty();
+    req.checkBody("pin", "Pin is required").notEmpty();
+    req
+      .checkBody(
+        "pin_confirmation",
+        "Pin Confirmation does not match with supplied pin"
+      )
+      .equals(req.body.pin);
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(409).json({ errors });
+    }
+
+    const old_pin = req.body.old_pin;
+    const pin = req.body.pin;
+
+    const userToken = req.userToken;
+    const user_id = userToken.user_id;
+    const wallet_id = userToken.wallet_id;
+
+    const pin_size = 4;
+
+    if (isNaN(pin)) {
+      return res.status(400).json({
+        success: false,
+        message: "Pin is not valid, it must be a number"
+      });
+    } else if (pin.length != pin_size) {
+      return res.status(400).json({
+        success: false,
+        message: "Your pin must be a 4 digit number"
+      });
+    } else {
+      userQuery = {
+        user_id,
+        wallet_id
+      };
+
+      UserWallet.findOne(userQuery, (err, userWallet) => {
+        if (err) {
+          return res.status(400).json({
+            success: false,
+            error: err
+          });
+        }
+        if (!userWallet) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Your wallet is inaccessible at the moment, try again later or contact an Admin"
+          });
+        }
+        if (userWallet.pin != old_pin) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Your old pin is incorrect. Please supply the old pin to correctly setup a new pin"
+          });
+        } else {
+          async.parallel(
+            {
+              userWalletUpdate: callback => {
+                UserWallet.update(userQuery, {
+                  $set: {
+                    pin: pin
+                  }
+                }).exec(callback);
+              }
+            },
+            err => {
+              // console.log('after async: ',result);
+              if (err) {
+                return res.status(400).json({
+                  success: false,
+                  error: err
+                });
+              } else {
+                return res.status(200).json({
+                  success: true,
+                  message: `Pin Updated Successfully`
+                });
+              }
+            }
+          );
         }
       });
     }
