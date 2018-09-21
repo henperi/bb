@@ -36,8 +36,8 @@ router.get(
 
 router.post("/pay", checkAuth, usersController.payUser);
 
-router.post("/set-pin", checkAuth, usersController.setPin);
-router.post("/update-pin", checkAuth, usersController.updatePin);
+// router.post("/set-pin", checkAuth, usersController.setPin);
+// router.post("/update-pin", checkAuth, usersController.updatePin);
 
 router.use("", (req, res) =>
   res.status(404).json({ message: "This endpoint does not exist" })
