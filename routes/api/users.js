@@ -1,7 +1,4 @@
 const express = require("express");
-const passport = require("passport");
-const bcrypt = require("bcryptjs");
-const async = require("async");
 
 const router = express.Router();
 
@@ -22,7 +19,7 @@ router.use((req, res, next) => {
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
   if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   }
   next();
 });
@@ -38,6 +35,9 @@ router.get(
 );
 
 router.post("/pay", checkAuth, usersController.payUser);
+
+router.post("/set-pin", checkAuth, usersController.setPin);
+router.post("/update-pin", checkAuth, usersController.updatePin);
 
 router.use("", (req, res) =>
   res.status(404).json({ message: "This endpoint does not exist" })

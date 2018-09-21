@@ -31,6 +31,15 @@ const userWalletSchema = mongoose.Schema({
     type: String,
     default: "Active",
     required: true
+  },
+  pin_status: {
+    type: String,
+    default: "unset",
+    required: true
+  },
+  pin: {
+    type: Number,
+    required: false
   }
 });
 
