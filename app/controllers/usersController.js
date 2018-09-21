@@ -280,7 +280,7 @@ const usersController = {
           } = results.findAccount;
 
           if (results.findWallet.pin_status == "unset") {
-            return res.status(400).json({
+            return res.status(200).json({
               success: true,
               message: "Please Setup Your Payment Pin First",
               userData: {
