@@ -25,15 +25,24 @@ var MongoDBStore = require("connect-mongodb-session")(session);
 //Bring in the configured database
 const configDB = require("./config/database");
 
-// //Database Local Connection
-// mongoose.connect(configDB.local_url, { useNewUrlParser: true }).then(
-//     () => {console.log('Database is connected') },
-//     err => { console.log('Can not connect to the database:' +err)
-// });
+// Database Local Connection
+// mongoose
+//   .connect(
+//     configDB.local_url,
+//     { useNewUrlParser: true }
+//   )
+//   .then(
+//     () => {
+//       console.log("Database is connected");
+//     },
+//     err => {
+//       console.log("Can not connect to the database:" + err);
+//     }
+//   );
 // mongoose.Promise = global.Promise;
 // var store = new MongoDBStore({
-//     uri: configDB.local_url,
-//     collection: 'mySessions'
+//   uri: configDB.local_url,
+//   collection: "mySessions"
 // });
 
 //Database Remote Connection
@@ -72,7 +81,6 @@ const PORT = process.env.PORT || 5000;
 const HOST = "0.0.0.0";
 const CONCURRENCY = process.env.WEB_CONCURRENCY || 1;
 
-console.log("port defined as:", PORT);
 //Set the static assets folder
 app.use(express.static(__dirname + "/public"));
 

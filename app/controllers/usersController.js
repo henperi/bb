@@ -1,6 +1,11 @@
 const User = require("../models/User.model");
 const UserWallet = require("../models/UserWallet.model");
+
+const Admin = require("../models/Admin.model");
+const AdminWallet = require("../models/AdminWallet.model");
+
 const PaymentsHistory = require("../models/PaymentsHistory");
+const SendFundsHistory = require("../models/SendFundsHistory.model");
 
 const async = require("async");
 const bcrypt = require("bcryptjs");
@@ -147,7 +152,6 @@ const usersController = {
       );
     }
   },
-
   /**
    *
    */
@@ -213,10 +217,10 @@ const usersController = {
                     " " +
                     results.findAccount.lastname
                 },
-                jwt_key.JWT_KEY,
-                {
-                  expiresIn: "5d"
-                }
+                jwt_key.JWT_KEY
+                // {
+                //   expiresIn: "5d"
+                // }
               );
               return res.status(200).json({
                 success: true,
@@ -382,7 +386,7 @@ const usersController = {
     const errors = req.validationErrors();
 
     if (errors) {
-      return res.status(409).json({ errors });
+      return res.status(400).json({ errors });
     }
 
     const min_amount = 0;
@@ -452,7 +456,7 @@ const usersController = {
               success: false,
               message: `Your ballance is too low, cannot pay N${pay_amount}, when you only have N${
                 payerWallet.ballance
-              }, try again with a lower amount `
+              }, try again with a lower amount`
             });
           } else {
             async.parallel(
@@ -466,7 +470,6 @@ const usersController = {
                 }
               },
               (err, result) => {
-                // console.log('after async: ',result);
                 if (err) {
                   return res.status(400).json({
                     success: false,
@@ -523,7 +526,7 @@ const usersController = {
                           newPaymentsHistory
                             .save()
                             .then(save => {
-                              return res.status(400).json({
+                              return res.status(200).json({
                                 success: true,
                                 message: `Payment Successfull`,
                                 paymentData: {
@@ -659,7 +662,7 @@ const usersController = {
     const errors = req.validationErrors();
 
     if (errors) {
-      return res.status(409).json({ errors });
+      return res.status(400).json({ success: false, errors });
     }
 
     const old_pin = req.body.old_pin;
@@ -689,20 +692,20 @@ const usersController = {
 
       UserWallet.findOne(userQuery, (err, userWallet) => {
         if (err) {
-          return res.status(400).json({
+          return res.status(500).json({
             success: false,
             error: err
           });
         }
         if (!userWallet) {
-          return res.status(400).json({
+          return res.status(404).json({
             success: false,
             message:
               "Your wallet is inaccessible at the moment, try again later or contact an Admin"
           });
         }
         if (userWallet.pin != old_pin) {
-          return res.status(400).json({
+          return res.status(409).json({
             success: false,
             message:
               "Your old pin is incorrect. Please supply the old pin to correctly setup a new pin"
@@ -719,9 +722,8 @@ const usersController = {
               }
             },
             err => {
-              // console.log('after async: ',result);
               if (err) {
-                return res.status(400).json({
+                return res.status(500).json({
                   success: false,
                   error: err
                 });
@@ -733,6 +735,410 @@ const usersController = {
               }
             }
           );
+        }
+      });
+    }
+  },
+  /**
+   * This method needs to be updated
+   */
+  updatePassword(req, res) {
+    req.checkBody("old_password", "Password is required").notEmpty();
+    req.checkBody("new_password", "Password is required").notEmpty();
+    req
+      .checkBody(
+        "password_confirmation",
+        "Password Confirmation does not match with supplied new password"
+      )
+      .equals(req.body.password);
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    const old_pin = req.body.old_pin;
+    const pin = req.body.pin;
+
+    const userToken = req.userToken;
+    const user_id = userToken.user_id;
+    const wallet_id = userToken.wallet_id;
+
+    const pin_size = 4;
+
+    if (isNaN(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "password is not valid, it must be a number"
+      });
+    } else if (pin.length != pin_size) {
+      return res.status(400).json({
+        success: false,
+        message: "Your password must be have at least 4 characters"
+      });
+    } else {
+      userQuery = {
+        user_id,
+        wallet_id
+      };
+
+      UserWallet.findOne(userQuery, (err, userWallet) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            error: err
+          });
+        }
+        if (!userWallet) {
+          return res.status(404).json({
+            success: false,
+            message:
+              "Your wallet is inaccessible at the moment, try again later or contact an Admin"
+          });
+        }
+        if (userWallet.pin != old_pin) {
+          return res.status(409).json({
+            success: false,
+            message:
+              "Your old pin is incorrect. Please supply the old pin to correctly setup a new pin"
+          });
+        } else {
+          async.parallel(
+            {
+              userWalletUpdate: callback => {
+                UserWallet.update(userQuery, {
+                  $set: {
+                    pin: pin
+                  }
+                }).exec(callback);
+              }
+            },
+            err => {
+              if (err) {
+                return res.status(500).json({
+                  success: false,
+                  error: err
+                });
+              } else {
+                return res.status(200).json({
+                  success: true,
+                  message: `Pin Updated Successfully`
+                });
+              }
+            }
+          );
+        }
+      });
+    }
+  },
+  /**
+   *
+   */
+  getTransactionHistory(req, res) {
+    const userToken = req.userToken;
+    const user_id = userToken.user_id;
+    const wallet_id = userToken.wallet_id;
+    const email = userToken.email;
+
+    payoutQuery = { payer_wallet_id: wallet_id };
+    receiveQuery = { receiver_wallet_id: wallet_id };
+
+    async.parallel(
+      {
+        payOutHistory: callback => {
+          PaymentsHistory.find(payoutQuery)
+            .sort({ _id: -1 })
+            .exec(callback);
+        },
+        receiveHistory: callback => {
+          PaymentsHistory.find(receiveQuery)
+            .sort({ _id: -1 })
+            .exec(callback);
+        },
+        receiveFundHistory: callback => {
+          SendFundsHistory.find(receiveQuery)
+            .sort({ _id: -1 })
+            .exec(callback);
+        }
+      },
+      (err, result) => {
+        if (err) return next(err);
+        else {
+          const receiveFundHistory = result.receiveFundHistory;
+
+          const fundingHistory = [];
+          receiveFundHistory.forEach(historyItem => {
+            let transaction_type = "Bank To Wallet Transaction";
+            if (
+              historyItem.sender_role == "Super-Admin" ||
+              historyItem.sender_role == "Manager"
+            ) {
+              transaction_type = "Admin To User Transaction";
+            }
+            if (historyItem.sender_role == "Agent") {
+              transaction_type = "Agent To User Transaction";
+            }
+
+            item = {
+              from: historyItem.sender_name,
+              to: historyItem.receiver_name,
+              amount: historyItem.amount,
+              commission: historyItem.commission,
+              remark: historyItem.remark,
+              transaction_type,
+              createdAt: historyItem.createdAt
+            };
+
+            fundingHistory.push(item);
+          });
+
+          return res.status(200).json({
+            success: true,
+            message: `Your History Fetched Successfully`,
+            payOutHistory: result.payOutHistory,
+            receiveHistory: result.receiveHistory,
+            fundingHistory
+          });
+        }
+      }
+    );
+  },
+  /**
+   *Search an Admin To pay
+   *{@param: mobile} adminMobile
+   */
+  searchAdmin(req, res) {
+    const wallet_id = req.params.adminMobile;
+
+    userQuery = { mobile: wallet_id };
+
+    async.parallel(
+      {
+        findAccount: callback => {
+          Admin.findOne(userQuery).exec(callback);
+        }
+      },
+      (err, results) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            errors: err
+          });
+        }
+        if (!results.findAccount) {
+          return res.status(404).json({
+            success: false,
+            message: "There is no admin with this mobile account"
+          });
+        } else {
+          console.log(results.findAccount);
+          const { _id, firstname, lastname, mobile } = results.findAccount;
+          return res.status(200).json({
+            success: true,
+            message: "Admin cashout account found",
+            receiverData: {
+              _id,
+              mobile,
+              firstname,
+              lastname
+            }
+          });
+        }
+      }
+    );
+  },
+  /**
+   * Cashout via admin is synonunymous to paying an Admin
+   * {@param} requires => {pay_amount, receiver_id, mobile, pin}
+   */
+  payAdmin(req, res) {
+    req.checkBody("pay_amount", "Amount is required").notEmpty();
+    req.checkBody("receiver_id", "Receiver ID is required").notEmpty();
+    req.checkBody("mobile", "Receiver mobile is required").notEmpty();
+    req.checkBody("pin", "Your payment pin is required").notEmpty();
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    const min_amount = 0;
+    const remark = req.body.remark || null;
+
+    const pay_amount = req.body.pay_amount;
+    const pin = req.body.pin;
+
+    const receiver_id = req.body.receiver_id;
+    const receiver_wallet_id = req.body.mobile;
+
+    const userToken = req.userToken;
+    const payer_id = userToken.user_id;
+    const payer_wallet_id = userToken.wallet_id;
+    const payer_name = userToken.fullname;
+
+    if (isNaN(pay_amount)) {
+      return res.status(400).json({
+        success: false,
+        message: "Cashout amount is not valid, it must be a number"
+      });
+    } else if (pay_amount <= min_amount) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cashout amount is too small, increase the amount and try again"
+      });
+    } else {
+      payerWalletQuery = {
+        user_id: payer_id,
+        wallet_id: payer_wallet_id
+      };
+      receiverWalletQuery = {
+        user_id: receiver_id,
+        wallet_id: receiver_wallet_id
+      };
+
+      UserWallet.findOne(payerWalletQuery, (err, payerWallet) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            error: err
+          });
+        }
+        if (!payerWallet) {
+          return res.status(404).json({
+            success: false,
+            message:
+              "Your wallet is inaccessible at the moment, try again later."
+          });
+        } else {
+          if (payerWallet.pin_status != "set") {
+            return res.status(400).json({
+              success: false,
+              message: `Your need to setup your pin `
+            });
+          }
+          if (pin != payerWallet.pin) {
+            return res.status(409).json({
+              success: false,
+              message: `Your pin is invalid `
+            });
+          }
+          if (pay_amount > payerWallet.ballance) {
+            return res.status(400).json({
+              success: false,
+              message: `Your ballance is too low, cannot pay N${pay_amount}, when you only have N${
+                payerWallet.ballance
+              }, try again with a lower amount`
+            });
+          } else {
+            async.parallel(
+              {
+                receiverWallet: callback => {
+                  AdminWallet.findOne(receiverWalletQuery).exec(callback);
+                },
+
+                foundReceiver: callback => {
+                  Admin.findOne({ mobile: receiver_wallet_id }).exec(callback);
+                }
+              },
+              (err, result) => {
+                if (err) {
+                  return res.status(500).json({
+                    success: false,
+                    error: err
+                  });
+                } else {
+                  if (!result.receiverWallet) {
+                    return res.status(500).json({
+                      success: false,
+                      message: `Issue with this cashout account, the admin wallet account details sent might be invalid.`,
+                      developer_msg: `Ensure the receiver_id and mobile sent belongs to the same receiving admin. fetch the receivers 
+                      data from api/users/search/cashout/:adminMobile endpoint`
+                    });
+                  } else if (!result.foundReceiver) {
+                    return res.status(404).json({
+                      success: false,
+                      message: `Issue with this Admin account, the admin mobile sent does not exist`
+                    });
+                  } else {
+                    const foundReceiver_fullname =
+                      result.foundReceiver.firstname +
+                      " " +
+                      result.foundReceiver.lastname;
+
+                    async.parallel(
+                      {
+                        payerWalletUpdate: callback => {
+                          UserWallet.update(payerWalletQuery, {
+                            $inc: { ballance: -pay_amount }
+                          }).exec(callback);
+                        },
+
+                        receiverWalletUpdate: callback => {
+                          AdminWallet.update(receiverWalletQuery, {
+                            $inc: { ballance: pay_amount }
+                          }).exec(callback);
+                        }
+                      },
+                      err => {
+                        if (err) {
+                          return res.status(500).json({
+                            success: false,
+                            error: err
+                          });
+                        } else {
+                          let newPaymentsHistory = new PaymentsHistory({
+                            payer_wallet_id,
+                            payer_name,
+                            receiver_wallet_id,
+                            receiver_name: foundReceiver_fullname,
+                            amount: pay_amount,
+                            remark: remark,
+                            type: "Cashout"
+                          });
+
+                          let newFundsHistory = new SendFundsHistory({
+                            sender_wallet_id: payer_wallet_id,
+                            sender_name: payer_name,
+                            receiver_wallet_id,
+                            receiver_name: foundReceiver_fullname,
+                            amount: pay_amount,
+                            sender_role: "User",
+                            receiver_role: result.foundReceiver.role,
+                            remark: remark,
+                            commission: 0
+                          });
+
+                          newPaymentsHistory
+                            .save()
+                            .then(newFundsHistory.save())
+                            .then(save => {
+                              return res.status(200).json({
+                                success: true,
+                                message: `Cashout amount successfully sent, collect your cash`,
+                                paymentData: {
+                                  pay_amount,
+                                  receiver_wallet_id,
+                                  receiver_name: foundReceiver_fullname
+                                }
+                              });
+                            })
+                            .catch(err => {
+                              return res.status(500).json({
+                                success: false,
+                                errors: err
+                              });
+                            });
+                        }
+                      }
+                    );
+                  }
+                }
+              }
+            );
+          }
         }
       });
     }

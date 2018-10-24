@@ -1,80 +1,93 @@
-        <!-- begin #content -->
-		<div id="content" class="content">
-			<!-- begin breadcrumb -->
-			<ol class="breadcrumb pull-right d-none">
-				<li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
-				<li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
-				<li class="breadcrumb-item active">Dashboard v2</li>
-			</ol>
-			<!-- end breadcrumb -->
-			<!-- begin page-header -->
-			<h1 class="page-header">{{user.role}}'s Dashboard</small></h1>{{admin.firstname}}
-			<!-- end page-header -->
-			
+<!-- begin #content -->
+<div id="content" class="content">
+	<!-- begin breadcrumb -->
+	<ol class="breadcrumb pull-right d-none">
+		<li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+		<li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
+		<li class="breadcrumb-item active">Dashboard v2</li>
+	</ol>
+	<!-- end breadcrumb -->
+	<!-- begin page-header -->
+	<h1 class="page-header">{{user.role}}'s Dashboard</small></h1>{{admin.firstname}}
+	<!-- end page-header -->
 
-			<div class="row">
-				
-			</div>
-			
-			<!-- begin row -->
-			<div class="row">
-				<div class="col-lg-12">
-					<div class="panel panel-inverse" data-sortable-id="ui-widget-2">
-						<div class="panel-heading ui-sortable-handle">
-							
-							<h4 class="panel-title">Received Funds History</h4>
-						</div>
-						<div class="panel-body">
-                        	<!-- begin table-responsive -->
-                        	<div class="table-responsive">
-								<table class="table table-striped m-b-0">
-									<thead>
-										<tr>
-											{{!-- <th>#</th> --}}
-											<th>Amount</th>
-											<th>Received From</th>
-											{{#if companyStaff}}
-											<th>Receiver Type</th>
-											{{/if}}
-											{{#unless companyStaff}}
-											<th>Commission Charged</th>
-											{{/unless}}
-											<th>Date</th>
-											<th>Remark</th>
-										</tr>
-									</thead>
-									<tbody>
-										{{#each receivedFunds }}
-											<tr>
-                                                {{!-- <td></td> --}}
-												<td>&#8358;{{formatCash this.amount }}</td>
-												<td>{{this.sender_name}} <b>({{ this.sender_wallet_id }})</b></td>
-												{{#if companyStaff}}
-												<td>{{this.sender_role}}</td>
-												{{/if}}
-												{{#unless companyStaff}}
-												<td>&#8358;{{this.commission}}</td>
-												{{/unless}}
-												<td>{{formatDate this.createdAt }}</td>
-												<td>{{ this.remark }}</td>
-											</tr>
-										{{/each}}
-											
-									</tbody>
-								</table>								
-							</div>
-							<div class="panel-footer text-center">
-								<a href="javascript:;" class="text-inverse btn btn-default">View All</a>
-							</div>
-							<!-- end table-responsive -->
-						</div>
-						<div class="hljs-wrapper">
-						
-						</div>
+
+	<div class="row">
+
+	</div>
+
+	<!-- begin row -->
+	<div class="row">
+		<div class="col-lg-12">
+			<div class="panel panel-inverse" data-sortable-id="ui-widget-2">
+				<div class="panel-heading ui-sortable-handle">
+
+					<h4 class="panel-title">Received Funds History</h4>
+				</div>
+				<div class="panel-body">
+					<!-- begin table-responsive -->
+					<div class="table-responsive">
+						<table class="table table-striped m-b-0">
+
+							<thead>
+								{{#if companyStaff}}
+								<th>Amount</th>
+								<th>Received From</th>
+								<th>Sender Type</th>
+								<th>Date</th>
+								<th>Remark</th>
+								{{/if}}
+
+								{{#unless companyStaff}}
+								<th>Amount</th>
+								<th>Received From</th>
+								<th>Commission Charged</th>
+								<th>Date</th>
+								<th>Remark</th>
+								{{/unless}}
+							</thead>
+							<tbody>
+								{{#if companyStaff}}
+								{{#each receivedFunds }}
+								<tr>
+									{{!-- <td></td> --}}
+									<td>&#8358;{{formatCash this.amount }}</td>
+									<td>{{this.sender_name}} <b>({{ this.sender_wallet_id }})</b></td>
+									<td>{{this.sender_role}}</td>
+									<td>{{formatDate this.createdAt }}</td>
+									<td>{{ this.remark }}</td>
+								</tr>
+								{{/each}}
+								{{/if}}
+
+								{{#unless companyStaff}}
+								{{#each receivedFunds }}
+								<tr>
+									{{!-- <td></td> --}}
+									<td>&#8358;{{formatCash this.amount }}</td>
+									<td>{{this.sender_name}} <b>({{ this.sender_wallet_id }})</b></td>
+									<td>&#8358;{{this.commission}}</td>
+									<td>{{formatDate this.createdAt }}</td>
+									<td>{{ this.remark }}</td>
+								</tr>
+								{{/each}}
+								{{/unless}}
+								</tr>
+
+							</tbody>
+						</table>
 					</div>
+					<div class="panel-footer text-center">
+						<a href="javascript:;" class="text-inverse btn btn-default">View All</a>
+					</div>
+					<!-- end table-responsive -->
+				</div>
+				<div class="hljs-wrapper">
+
 				</div>
 			</div>
-			<!-- end row -->
 		</div>
-		<!-- end #content -->
-		
+	</div>
+	<!-- end row -->
+</div>
+<!-- end #content -->

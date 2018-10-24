@@ -36,8 +36,30 @@ router.get(
 
 router.post("/pay", checkAuth, usersController.payUser);
 
+/**
+ * Search an Admin to Cashout through
+ * {@returns the admins data required to pay}
+ */
+router.get(
+  "/search/cashout/:adminMobile",
+  checkAuth,
+  usersController.searchAdmin
+);
+/**
+ * Pay/Cashout via an Admin
+ * {@param requires the data from the cashout search}
+ * [@returns] the payment status
+ */
+router.post("/cashout", checkAuth, usersController.payAdmin);
+
 router.post("/set-pin", checkAuth, usersController.setPin);
 router.post("/update-pin", checkAuth, usersController.updatePin);
+
+router.get(
+  "/transaction-history",
+  checkAuth,
+  usersController.getTransactionHistory
+);
 
 router.use("", (req, res) =>
   res.status(404).json({ message: "This endpoint does not exist" })

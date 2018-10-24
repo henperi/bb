@@ -31,6 +31,10 @@ const paymentSchema = mongoose.Schema(
     remark: {
       type: String,
       required: false
+    },
+    type: {
+      type: String,
+      required: false
     }
   },
   {
