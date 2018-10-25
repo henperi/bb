@@ -1143,6 +1143,10 @@ const usersController = {
       });
     }
   }
+  /**
+   * Update profile pic
+   */
+  // updatePic(req, res) {}
 };
 
 module.exports = usersController;

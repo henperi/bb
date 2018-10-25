@@ -1,16 +1,12 @@
 //server.js
 
-//Setting Up The Server =====================================================================//
-
 //Require the essential modules to working with express
 const express = require("express");
 
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
-
 const session = require("express-session");
-// const expressMessages = require('express-messages');
 const expressValidator = require("express-validator");
 const expressHbs = require("express-handlebars");
 
@@ -18,36 +14,33 @@ const flash = require("connect-flash");
 const passport = require("passport");
 const mongoose = require("mongoose");
 
-// const sessionStore = require('sessionstore');
+const dotenv = require("dotenv");
+dotenv.config();
+
+const NODE_ENV = process.env.NODE_ENV;
+let databaseURL;
+switch (NODE_ENV) {
+  case "DEV":
+    databaseURL = process.env.DEV_DB_URL;
+    break;
+
+  case "PROD":
+    databaseURL = process.env.PROD_DB_URL;
+    break;
+
+  default:
+    databaseURL = process.env.DEV_DB_URL;
+    break;
+}
 
 var MongoDBStore = require("connect-mongodb-session")(session);
 
 //Bring in the configured database
 const configDB = require("./config/database");
 
-// Database Local Connection
-// mongoose
-//   .connect(
-//     configDB.local_url,
-//     { useNewUrlParser: true }
-//   )
-//   .then(
-//     () => {
-//       console.log("Database is connected");
-//     },
-//     err => {
-//       console.log("Can not connect to the database:" + err);
-//     }
-//   );
-// mongoose.Promise = global.Promise;
-// var store = new MongoDBStore({
-//   uri: configDB.local_url,
-//   collection: "mySessions"
-// });
-
 //Database Remote Connection
 mongoose.connect(
-  configDB.remote_url,
+  databaseURL,
   { useNewUrlParser: true },
   err => {
     if (err) {
@@ -59,7 +52,7 @@ mongoose.connect(
 );
 mongoose.Promise = global.Promise;
 var store = new MongoDBStore({
-  uri: configDB.remote_url,
+  uri: databaseURL,
   collection: "mySessions"
 });
 
@@ -156,8 +149,13 @@ const userRoute = require("./routes/api/users");
 app.use("/admins", adminRoute);
 app.use("/api/users", userRoute);
 
-app.use("", (req, res, next) => {
-  res.send("404 page");
+app.use("*/*", express.static("views/admins/404.html"));
+
+app.use("/", (req, res, next) => {
+  res.render("admins/coming-soon.hbs", {
+    layout: null,
+    title: null
+  });
 });
 
 //Launch the server

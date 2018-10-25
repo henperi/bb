@@ -13,6 +13,10 @@ const userSchema = mongoose.Schema(
     email: String,
     password: String,
     role: String,
+    profile_pic: {
+      type: String,
+      required: false
+    },
     created_by: {
       type: String,
       required: false

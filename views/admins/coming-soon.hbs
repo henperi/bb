@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8" />
+    <title>Bewla | Coming Soon</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <meta content="" name="description" />
+    <meta content="" name="author" />
+
+    <!-- ================== BEGIN BASE CSS STYLE ================== -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+    <link href="../assets/plugins/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
+    <link href="../assets/plugins/bootstrap/4.1.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../assets/plugins/font-awesome/5.0/css/fontawesome-all.min.css" rel="stylesheet" />
+    <link href="../assets/plugins/animate/animate.min.css" rel="stylesheet" />
+    <link href="../assets/css/default/style.min.css" rel="stylesheet" />
+    <link href="../assets/css/default/style-responsive.min.css" rel="stylesheet" />
+    <link href="../assets/css/default/theme/default.css" rel="stylesheet" id="theme" />
+    <!-- ================== END BASE CSS STYLE ================== -->
+
+    <!-- ================== BEGIN PAGE CSS STYLE ================== -->
+    <link href="../assets/plugins/jquery.countdown/jquery.countdown.css" rel="stylesheet" />
+    <!-- ================== END PAGE CSS STYLE ================== -->
+
+    <!-- ================== BEGIN BASE JS ================== -->
+    <script src="../assets/plugins/pace/pace.min.js"></script>
+    <!-- ================== END BASE JS ================== -->
+    <base href="/public" target="">
+</head>
+
+<body class="bg-white p-t-0 pace-top">
+    <!-- begin #page-loader -->
+    <div id="page-loader" class="fade show"><span class="spinner"></span></div>
+    <!-- end #page-loader -->
+
+    <!-- begin #page-container -->
+    <div id="page-container" class="fade">
+        <!-- begin coming-soon -->
+        <div class="coming-soon">
+            <!-- begin coming-soon-header -->
+            <div class="coming-soon-header">
+                <div class="bg-cover"></div>
+                <div class="brand">
+                    <span class="logo"></span> <b>Bewla</b>
+                </div>
+                <div class="desc">
+                    Our web and mobile App is almost ready and it’s rebuilt from scratch! A lot of great new features
+                    <br />and
+                    improvements are coming.
+                </div>
+                <div class="timer">
+                    <div id="timer"></div>
+                </div>
+            </div>
+            <!-- end coming-soon-header -->
+            <!-- begin coming-soon-content -->
+            <div class="coming-soon-content">
+                <div class="desc">
+                    We are launching a closed <b>beta App</b> soon!<br /> Sign up to try it before others and be the
+                    first
+                    to know when we <b>launch</b>.
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Email Address" />
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-inverse">Notify Me</button>
+                    </div>
+                </div>
+                <p class="help-block m-b-25"><i>We don't spam. Your email address is secure with us.</i></p>
+                <p>
+                    Follow us on
+                    <a href="javascript:;" class="text-inverse"><i class="fab fa-twitter fa-lg fa-fw text-info"></i>
+                        Twitter</a> and
+                    <a href="javascript:;" class="text-inverse"><i class="fab fa-facebook fa-lg fa-fw text-primary"></i>
+                        Facebook</a>
+                </p>
+            </div>
+            <!-- end coming-soon-content -->
+        </div>
+        <!-- end coming-soon -->
+
+    </div>
+    <!-- end page container -->
+
+    <!-- ================== BEGIN BASE JS ================== -->
+    <script src="../assets/plugins/jquery/jquery-3.2.1.min.js"></script>
+    <script src="../assets/plugins/jquery-ui/jquery-ui.min.js"></script>
+    <script src="../assets/plugins/bootstrap/4.1.0/js/bootstrap.bundle.min.js"></script>
+    <!--[if lt IE 9]>
+		<script src="../assets/crossbrowserjs/html5shiv.js"></script>
+		<script src="../assets/crossbrowserjs/respond.min.js"></script>
+		<script src="../assets/crossbrowserjs/excanvas.min.js"></script>
+	<![endif]-->
+    <script src="../assets/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+    <script src="../assets/plugins/js-cookie/js.cookie.js"></script>
+    <script src="../assets/js/theme/default.min.js"></script>
+    <script src="../assets/js/apps.min.js"></script>
+    <!-- ================== END BASE JS ================== -->
+
+    <!-- ================== BEGIN PAGE LEVEL JS ================== -->
+    <script src="../assets/plugins/jquery.countdown/jquery.plugin.js"></script>
+    <script src="../assets/plugins/jquery.countdown/jquery.countdown.js"></script>
+    <script src="../assets/js/demo/coming-soon.demo.min.js"></script>
+    <!-- ================== END PAGE LEVEL JS ================== -->
+
+    <script>
+        $(document).ready(function () {
+            App.init();
+            ComingSoon.init();
+        });
+    </script>
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-53034621-1', 'auto');
+        ga('send', 'pageview');
+
+    </script>
+</body>
+
+</html>

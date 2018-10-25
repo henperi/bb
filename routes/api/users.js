@@ -1,6 +1,8 @@
 const express = require("express");
 
 const router = express.Router();
+// const multer = require("multer");
+// const upload = multer({ dest: "public/uploads/users" });
 
 //Bring in Necessary Models
 const User = require("../../app/models/User.model");
@@ -60,6 +62,13 @@ router.get(
   checkAuth,
   usersController.getTransactionHistory
 );
+
+// router.post(
+//   "/profile/update-pic",
+//   checkAuth,
+//   upload.single("profile-image"),
+//   usersController.updatePic
+// );
 
 router.use("", (req, res) =>
   res.status(404).json({ message: "This endpoint does not exist" })
