@@ -1,8 +1,34 @@
 const express = require("express");
+const moment = require("moment");
 
 const router = express.Router();
-// const multer = require("multer");
-// const upload = multer({ dest: "public/uploads/users" });
+const multer = require("multer");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./public/uploads/users/profile");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${req.userToken.email}.${file.mimetype.split("/")[1]}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
+    cb(null, true);
+  } else {
+    //reject file
+    cb(error => new Error("Invalid image format"), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 1024 * 1024 * 2
+  },
+  fileFilter
+});
 
 //Bring in Necessary Models
 const User = require("../../app/models/User.model");
@@ -63,12 +89,12 @@ router.get(
   usersController.getTransactionHistory
 );
 
-// router.post(
-//   "/profile/update-pic",
-//   checkAuth,
-//   upload.single("profile-image"),
-//   usersController.updatePic
-// );
+router.post(
+  "/profile/update-pic",
+  checkAuth,
+  upload.single("profile_image"),
+  usersController.updatePic
+);
 
 router.use("", (req, res) =>
   res.status(404).json({ message: "This endpoint does not exist" })

@@ -15,6 +15,7 @@ const userSchema = mongoose.Schema(
     role: String,
     profile_pic: {
       type: String,
+      default: "/public/uploads/users/vector-3.png",
       required: false
     },
     created_by: {

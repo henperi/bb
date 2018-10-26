@@ -94,6 +94,9 @@ const usersController = {
               mobile: mobile,
               email: email,
               role: "User",
+              profile_pic: `${
+                req.headers.host
+              }/public/uploads/users/vector-3.png`,
               created_by: "Self",
               password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
               p_check: password
@@ -280,6 +283,7 @@ const usersController = {
             lastname,
             mobile,
             email,
+            profile_pic,
             createdAt
           } = results.findAccount;
 
@@ -293,6 +297,7 @@ const usersController = {
                 lastname,
                 mobile,
                 email,
+                profile_pic,
                 createdAt
               },
               userWallet: {
@@ -314,6 +319,7 @@ const usersController = {
               firstname,
               lastname,
               mobile,
+              profile_pic,
               email,
               createdAt
             },
@@ -1142,11 +1148,62 @@ const usersController = {
         }
       });
     }
-  }
+  },
   /**
    * Update profile pic
    */
-  // updatePic(req, res) {}
+  updatePic(req, res) {
+    console.log(req.userToken);
+    console.log(req.file);
+
+    const userToken = req.userToken;
+    const { email } = userToken;
+
+    userQuery = {
+      email
+    };
+
+    User.findOne(userQuery, (err, user) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          error: err
+        });
+      }
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Account not found"
+        });
+      } else {
+        async.parallel(
+          {
+            userProfileUpdate: callback => {
+              User.update(userQuery, {
+                $set: {
+                  profile_pic: req.file.path
+                }
+              }).exec(callback);
+            }
+          },
+          err => {
+            if (err) {
+              return res.status(400).json({
+                success: false,
+                error: err
+              });
+            } else {
+              return res.status(200).json({
+                success: true,
+                message: `Profile picture updated successfully`,
+                profile_pic: `${req.headers.host}/${req.file.path}`
+              });
+            }
+          }
+        );
+      }
+    });
+  }
 };
 
 module.exports = usersController;

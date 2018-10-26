@@ -149,6 +149,8 @@ const userRoute = require("./routes/api/users");
 app.use("/admins", adminRoute);
 app.use("/api/users", userRoute);
 
+app.use("/public/uploads", express.static("public/uploads/"));
+
 app.use("*/*", express.static("views/admins/404.html"));
 
 app.use("/", (req, res, next) => {
