@@ -160,7 +160,7 @@ const usersController = {
    */
   attemptSignin(req, res) {
     req.checkBody("email", "Email is required").notEmpty();
-    req.checkBody("email", "Email is not valid").isEmail();
+    // req.checkBody("email", "Email is not valid").isEmail();
     req.checkBody("password", "Password is required").notEmpty();
 
     const errors = req.validationErrors();
@@ -168,15 +168,19 @@ const usersController = {
     if (errors) {
       return res.status(400).json({ errors });
     }
+    // console.log(req.body.email);
     const email = req.body.email.toLowerCase();
     const password = req.body.password;
     // console.log(jwt_key);
     emailQuery = { email: email };
+    mobileQuery = { mobile: email };
 
     async.parallel(
       {
         findAccount: callback => {
-          User.findOne(emailQuery).exec(callback);
+          User.findOne({
+            $or: [emailQuery, mobileQuery]
+          }).exec(callback);
         }
       },
       (err, results) => {
@@ -189,11 +193,10 @@ const usersController = {
         if (!results.findAccount) {
           return res.status(404).json({
             success: false,
-            message: "This email account does not exist"
+            message:
+              "Authentication failed, wrong email/mobile and password combination"
           });
         } else {
-          // console.log(results);
-          // console.log(password, userPassword);
           const userPassword = results.findAccount.password;
           // if the user is found but the password is wrong
           bcrypt.compare(password, userPassword, (err, isMatch) => {
@@ -207,7 +210,8 @@ const usersController = {
               console.log(`user is found but the password is wrong`);
               return res.status(401).json({
                 success: false,
-                message: "Authentication failed"
+                message:
+                  "Authentication failed, wrong email/mobile and password combination"
               });
             } else {
               const token = jwt.sign(
