@@ -7,6 +7,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const jwt_key = require("../../config/env");
 
+const sendFCM = require('../middlewares/cloudMessaging');
+
 // const checkAuth = require("../middlewares/checkAuth");
 
 const usersController = {
@@ -35,6 +37,7 @@ const usersController = {
     const email = req.body.email.toLowerCase();
     const account_type = "User";
     const password = req.body.password;
+    const fcm_token = req.body.fcm_token || undefined;
 
     if (isNaN(mobile)) {
       return res.status(409).json({
@@ -91,7 +94,8 @@ const usersController = {
               role: "User",
               created_by: "Self",
               password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
-              p_check: password
+              p_check: password,
+              fcm_token
             });
 
             newUser.save((err, createdUser) => {
@@ -163,6 +167,7 @@ const usersController = {
     }
     const email = req.body.email.toLowerCase();
     const password = req.body.password;
+    const fcm_token = req.body.fcm_token;
     // console.log(jwt_key);
     emailQuery = { email: email };
 
@@ -218,11 +223,33 @@ const usersController = {
                   expiresIn: "5d"
                 }
               );
-              return res.status(200).json({
-                success: true,
-                message: "Authentication successful",
-                token
-              });
+              //Update the users fcm token
+              async.parallel({
+                userWalletUpdate: callback => {
+                  User.update(emailQuery, {
+                    $set: {
+                      fcm_token: fcm_token
+                    }
+                  }).exec(callback);
+                }
+              }, 
+              err => {
+                if (err) {
+                  return res.status(400).json({
+                    success: false,
+                    error: err
+                  });
+                }
+                else {
+                  sendFCM(receiverAppToken = fcm_token, 'Welcome to Bewla', `Welcome to Bewla, pay for anything, everywhere and spilt bills easily`)
+                  
+                  return res.status(200).json({
+                    success: true,
+                    message: "Authentication successful",
+                    token
+                  });
+                }
+              });           
             }
           });
         }
@@ -519,6 +546,10 @@ const usersController = {
                             amount: pay_amount,
                             remark: remark
                           });
+
+                          const receiverAppToken = result.foundReceiver.fcm_token;
+                          //Send FCM payment notification
+                          sendFCM(receiverAppToken, 'Credit Alert', `${payer_name} sent ${pay_amount} to you. Click to view`)
 
                           newPaymentsHistory
                             .save()
