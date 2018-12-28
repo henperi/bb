@@ -18,14 +18,15 @@ const notifier = {
     const options = {
       priority: "high"
     };
-
-    admin.messaging().sendToDevice(fcm_token, payload, options)
-      .then((response) => {
-        console.log("Successfully sent message:", response);
-      })
-      .catch((error) => {
-        console.log("Error sending message:", error);
-      });
+    if(fcm_token) {
+      admin.messaging().sendToDevice(fcm_token, payload, options)
+        .then((response) => {
+          console.log("Successfully sent message:", response);
+        })
+        .catch((error) => {
+          console.log("Error sending message:", error);
+        });
+    }
   },
   /**
    * @description This method is used to send notifications combined with data
@@ -45,13 +46,15 @@ const notifier = {
       priority: "high"
     };
 
-    admin.messaging().sendToDevice(fcm_token, payload, options)
-      .then((response) => {
-        console.log("Successfully sent message:", response);
-      })
-      .catch((error) => {
-        console.log("Error sending message:", error);
-      });
+    if (fcm_token) {
+      admin.messaging().sendToDevice(fcm_token, payload, options)
+        .then((response) => {
+          console.log("Successfully sent message:", response);
+        })
+        .catch((error) => {
+          console.log("Error sending message:", error);
+        });
+    }
   },
   /**
    * @description This method is used to send data to a device
@@ -71,13 +74,15 @@ const notifier = {
       priority: "high"
     };
 
-    admin.messaging().sendToDevice(fcm_token, payload, options)
-      .then((response) => {
-        console.log("Successfully sent message:", response);
-      })
-      .catch((error) => {
-        console.log("Error sending message:", error);
-      });
+    if(fcm_token) {
+      admin.messaging().sendToDevice(fcm_token, payload, options)
+        .then((response) => {
+          console.log("Successfully sent message:", response);
+        })
+        .catch((error) => {
+          console.log("Error sending message:", error);
+        });
+    }
   }
 };
 
