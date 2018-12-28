@@ -29,6 +29,14 @@ const userSchema = mongoose.Schema(
     pin: {
       type: Number,
       required: false
+    },
+    resetCode: {
+      type: String,
+      required: false
+    },
+    fcm_token: {
+      type: String,
+      required: false
     }
   },
   {

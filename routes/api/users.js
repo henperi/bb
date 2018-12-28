@@ -82,6 +82,10 @@ router.post("/cashout", checkAuth, usersController.payAdmin);
 
 router.post("/set-pin", checkAuth, usersController.setPin);
 router.post("/update-pin", checkAuth, usersController.updatePin);
+router.post("/reset-pin", checkAuth, usersController.updatePin);
+
+router.post("/update-password", checkAuth, usersController.updatePassword);
+router.post("/reset-password", checkAuth, usersController.updatePassword);
 
 router.get(
   "/transaction-history",

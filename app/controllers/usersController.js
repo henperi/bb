@@ -13,6 +13,8 @@ const jwt = require("jsonwebtoken");
 const jwt_key = require("../../config/env");
 
 // const checkAuth = require("../middlewares/checkAuth");
+const mailer = require("../helpers/mailer");
+const notifier = require("../helpers/notifier");
 
 const usersController = {
   /**
@@ -40,6 +42,7 @@ const usersController = {
     const email = req.body.email.toLowerCase();
     const account_type = "User";
     const password = req.body.password;
+    const fcm_token = req.body.fcm_token;
 
     if (isNaN(mobile)) {
       return res.status(409).json({
@@ -99,7 +102,8 @@ const usersController = {
               }/public/uploads/users/vector-3.png`,
               created_by: "Self",
               password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
-              p_check: password
+              p_check: password,
+              fcm_token
             });
 
             newUser.save((err, createdUser) => {
@@ -171,6 +175,8 @@ const usersController = {
     // console.log(req.body.email);
     const email = req.body.email.toLowerCase();
     const password = req.body.password;
+    const fcm_token = req.body.fcm_token;
+    
     // console.log(jwt_key);
     emailQuery = { email: email };
     mobileQuery = { mobile: email };
@@ -225,15 +231,35 @@ const usersController = {
                     results.findAccount.lastname
                 },
                 jwt_key.JWT_KEY
-                // {
-                //   expiresIn: "5d"
-                // }
               );
-              return res.status(200).json({
-                success: true,
-                message: "Authentication successful",
-                token
-              });
+              
+              async.parallel(
+                {
+                  userUpdate: callback => {
+                    User.update(emailQuery, {
+                      $set: {
+                        fcm_token
+                      }
+                    }).exec(callback);
+                  }
+                },
+                err => {
+                  if (err) {
+                    console.log(err)
+                  } else {
+                    const data = {
+                      title: "Welcome to Bewla",
+                      body: "Make petty payments on the go without stress!"
+                    }
+                    notifier.sendNotificationOnly(fcm_token, data);
+                    return res.status(200).json({
+                      success: true,
+                      message: "Authentication successful",
+                      token
+                    });
+                  }
+                }
+              );
             }
           });
         }
@@ -409,6 +435,7 @@ const usersController = {
     const receiver_wallet_id = req.body.mobile;
 
     const userToken = req.userToken;
+    const email = userToken.email;
     const payer_id = userToken.user_id;
     const payer_wallet_id = userToken.wallet_id;
     const payer_name = userToken.fullname;
@@ -477,6 +504,10 @@ const usersController = {
 
                 foundReceiver: callback => {
                   User.findOne({ mobile: receiver_wallet_id }).exec(callback);
+                },
+
+                foundPayer: callback => {
+                  User.findOne({ email }).exec(callback);
                 }
               },
               (err, result) => {
@@ -524,6 +555,28 @@ const usersController = {
                             error: err
                           });
                         } else {
+                          const dataToPayer = {
+                            notification: {
+                              title: `DEBIT: Your Payout of ${pay_amount} was successful`,
+                              body: `You transferred N${pay_amount} to ${foundReceiver_fullname}`
+                            },
+                            data: {
+                              debit: pay_amount
+                            }
+                          }
+                          notifier.sendCombined(result.foundPayer.fcm_token, dataToPayer);
+
+                          const dataToReciever = {
+                            notification: {
+                              title: `CREDIT: You recieved a payment of ${pay_amount}`,
+                              body: `N${pay_amount} transferred to you from ${result.foundPayer.firstname} ${result.foundPayer.lastname}`
+                            },
+                            data: {
+                              credit: pay_amount
+                            }
+                          }
+                          notifier.sendCombined(result.foundReceiver.fcm_token, dataToReciever);
+
                           let newPaymentsHistory = new PaymentsHistory({
                             payer_wallet_id,
                             payer_name,
@@ -760,7 +813,7 @@ const usersController = {
         "password_confirmation",
         "Password Confirmation does not match with supplied new password"
       )
-      .equals(req.body.password);
+      .equals(req.body.new_password);
 
     const errors = req.validationErrors();
 
@@ -768,58 +821,52 @@ const usersController = {
       return res.status(400).json({ success: false, errors });
     }
 
-    const old_pin = req.body.old_pin;
-    const pin = req.body.pin;
+    const old_password = req.body.old_password;
+    const new_password = req.body.new_password;
+    const reset_code = req.body.reset_code;
 
-    const userToken = req.userToken;
-    const user_id = userToken.user_id;
-    const wallet_id = userToken.wallet_id;
-
-    const pin_size = 4;
-
-    if (isNaN(password)) {
+    if (new_password.length < 4) {
       return res.status(400).json({
         success: false,
-        message: "password is not valid, it must be a number"
-      });
-    } else if (pin.length != pin_size) {
-      return res.status(400).json({
-        success: false,
-        message: "Your password must be have at least 4 characters"
+        message: "Your password must be at least 4 characters or more"
       });
     } else {
+      
+      const userToken = req.userToken;
+      const { email } = userToken;
+
       userQuery = {
-        user_id,
-        wallet_id
+        email
       };
 
-      UserWallet.findOne(userQuery, (err, userWallet) => {
+      User.findOne(userQuery, (err, user) => {
         if (err) {
           return res.status(500).json({
             success: false,
             error: err
           });
         }
-        if (!userWallet) {
+        if (!user) {
           return res.status(404).json({
             success: false,
             message:
               "Your wallet is inaccessible at the moment, try again later or contact an Admin"
           });
         }
-        if (userWallet.pin != old_pin) {
+        if (user.p_check != old_password) {
           return res.status(409).json({
             success: false,
             message:
-              "Your old pin is incorrect. Please supply the old pin to correctly setup a new pin"
+              "Your old password is incorrect. Please supply the old password to correctly setup a new password"
           });
         } else {
           async.parallel(
             {
-              userWalletUpdate: callback => {
-                UserWallet.update(userQuery, {
+              userUpdate: callback => {
+                User.update(userQuery, {
                   $set: {
-                    pin: pin
+                    p_check: new_password,
+                    password: bcrypt.hashSync(new_password, bcrypt.genSaltSync(10))
                   }
                 }).exec(callback);
               }
@@ -833,7 +880,7 @@ const usersController = {
               } else {
                 return res.status(200).json({
                   success: true,
-                  message: `Pin Updated Successfully`
+                  message: `Password Updated Successfully`
                 });
               }
             }
@@ -841,6 +888,288 @@ const usersController = {
         }
       });
     }
+  },
+
+  resetPassword(req, res) {
+    req.checkBody("reset_code", "Reset Code is required").notEmpty();
+    req.checkBody("new_password", "Password is required").notEmpty();
+    req.checkBody("email", "Email is required").notEmpty();
+    req.checkBody("email", "Email is not valid").isEmail();
+    req
+      .checkBody(
+        "password_confirmation",
+        "Password Confirmation does not match with supplied new password"
+      )
+      .equals(req.body.new_password);
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    const new_password = req.body.new_password;
+    const reset_code = req.body.reset_code;
+    const email = req.body.email;
+
+    if (new_password.length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: "Your password must be at least 4 characters or more"
+      });
+    } else {
+      
+      userQuery = {
+        email
+      };
+
+      User.findOne(userQuery, (err, user) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            error: err
+          });
+        }
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message:
+              "Your wallet is inaccessible at the moment, try again later or contact an Admin"
+          });
+        }
+        if (user.resetCode != reset_code) {
+          return res.status(409).json({
+            success: false,
+            message:
+              "The reset code is incorrect. Please supply the a correct reset code to continue"
+          });
+        } else {
+          async.parallel(
+            {
+              userUpdate: callback => {
+                User.update(userQuery, {
+                  $set: {
+                    p_check: new_password,
+                    password: bcrypt.hashSync(new_password, bcrypt.genSaltSync(10))
+                  }
+                }).exec(callback);
+              }
+            },
+            err => {
+              if (err) {
+                return res.status(500).json({
+                  success: false,
+                  error: err
+                });
+              } else {
+                return res.status(200).json({
+                  success: true,
+                  message: `Password Updated Successfully`
+                });
+              }
+            }
+          );
+        }
+      });
+    }
+  },
+
+  resetPin(req, res) {
+    req.checkBody("email", "Email is required").notEmpty();
+    req.checkBody("email", "Email is not valid").isEmail();
+    req.checkBody("reset_code", "Reset Code is required").notEmpty();
+    req.checkBody("new_pin", "New Pin is required").notEmpty();
+    req
+      .checkBody(
+        "pin_confirmation",
+        "Pin Confirmation does not match with supplied new password"
+      )
+      .equals(req.body.new_pin);
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    const new_pin = req.body.new_pin;
+    const reset_code = req.body.reset_code;
+    const email = req.body.email;
+
+    if (new_pin.length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: "Your new pin must be at least 4 characters or more"
+      });
+    } else {
+      
+      userQuery = {
+        email
+      };
+
+      User.findOne(userQuery, (err, user) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            error: err
+          });
+        }
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message:
+              "Your wallet is inaccessible at the moment, try again later or contact an Admin"
+          });
+        }
+        if (user.resetCode != reset_code) {
+          return res.status(409).json({
+            success: false,
+            message:
+              "The reset code is incorrect. Please supply the a correct reset code to continue"
+          });
+        } else {
+          userWalletQuery = {
+            wallet_id: user.mobile
+          };
+          async.parallel(
+            {
+              userWalletUpdate: callback => {
+                UserWallet.update(userWalletQuery, {
+                  $set: {
+                    pin: new_pin
+                  }
+                }).exec(callback);
+              }
+            },
+            err => {
+              if (err) {
+                return res.status(500).json({
+                  success: false,
+                  error: err
+                });
+              } else {
+                return res.status(200).json({
+                  success: true,
+                  message: `Your Pin Updated Successfully`
+                });
+              }
+            }
+          );
+        }
+      });
+    }
+  },
+
+  resetPasswordMailer(req, res) {
+    req.checkBody("email", "Email is required").notEmpty();
+    req.checkBody("email", "Email is not valid").isEmail();
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    const email = req.body
+    userQuery = {
+      email
+    };
+
+    User.findOne(userQuery, (err, user) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          error: err
+        });
+      } else {
+        // Generate Random Capital Strings
+        const resetCode = Math.floor(Math.random() * (25 ** 6)).toString(36);
+        // Set Password Checker
+        // Send An Email
+        async.parallel(
+          {
+            userUpdate: callback => {
+              User.update(userQuery, {
+                $set: {
+                  resetCode
+                }
+              }).exec(callback);
+            }
+          },
+          err => {
+            if (err) {
+              return res.status(500).json({
+                success: false,
+                error: err
+              });
+            } else {
+              mailer.sendPasswordResetMail(email, user.firstname, resetCode)
+              return res.status(200).json({
+                success: true,
+                message: `An email has been sent to you with instructions to reset your password`
+              });
+            }
+          }
+        );
+      }
+    });
+    
+  },
+
+  resetPinMailer(req, res) {
+    req.checkBody("email", "Email is required").notEmpty();
+    req.checkBody("email", "Email is not valid").isEmail();
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    const email = req.body
+    userQuery = {
+      email
+    };
+
+    User.findOne(userQuery, (err, user) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          error: err
+        });
+      } else {
+        // Generate Random Capital Strings
+        const resetCode = Math.floor(Math.random() * (25 ** 6)).toString(36);
+        // Set Password Checker
+        // Send An Email
+        async.parallel(
+          {
+            userUpdate: callback => {
+              User.update(userQuery, {
+                $set: {
+                  resetCode
+                }
+              }).exec(callback);
+            }
+          },
+          err => {
+            if (err) {
+              return res.status(500).json({
+                success: false,
+                error: err
+              });
+            } else {
+              mailer.sendPinResetMail(email, user.firstname, resetCode)
+              return res.status(200).json({
+                success: true,
+                message: `An email has been sent to you with instructions to reset your pin`
+              });
+            }
+          }
+        );
+      }
+    });
+    
   },
   /**
    *
@@ -984,6 +1313,7 @@ const usersController = {
     const receiver_wallet_id = req.body.mobile;
 
     const userToken = req.userToken;
+    const email = userToken.email;
     const payer_id = userToken.user_id;
     const payer_wallet_id = userToken.wallet_id;
     const payer_name = userToken.fullname;
@@ -1051,6 +1381,10 @@ const usersController = {
 
                 foundReceiver: callback => {
                   Admin.findOne({ mobile: receiver_wallet_id }).exec(callback);
+                },
+
+                foundPayer: callback => {
+                  User.findOne({ email }).exec(callback);
                 }
               },
               (err, result) => {
@@ -1099,6 +1433,18 @@ const usersController = {
                             error: err
                           });
                         } else {
+
+                          const dataToPayer = {
+                            notification: {
+                              title: `DEBIT: Your Payout of ${pay_amount} was successful`,
+                              body: `You transferred N${pay_amount} to ${foundReceiver_fullname}`
+                            },
+                            data: {
+                              debit: pay_amount
+                            }
+                          }
+                          notifier.sendCombined(result.foundPayer.fcm_token, dataToPayer);
+
                           let newPaymentsHistory = new PaymentsHistory({
                             payer_wallet_id,
                             payer_name,

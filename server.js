@@ -33,61 +33,38 @@ switch (NODE_ENV) {
     break;
 }
 
-//
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-const msg = {
-  to: 'test@example.com',
-  from: 'test@example.com',
-  subject: 'Sending with SendGrid is Fun',
-  text: 'and easy to do anywhere, even with Node.js',
-  html: '<strong>and easy to do anywhere, even with Node.js</strong>',
-};
-sgMail
-  .send(msg)
-  .then(() => {
-    console.log('success');
-    return 'Email sent';
-  })
-  .catch((error) => {
-    // Log friendly error message
-    console.log('error', error);
-  });
-//
-
-
 var MongoDBStore = require("connect-mongodb-session")(session);
 
 //Bring in the configured database
 const configDB = require("./config/database");
 
 //Database Remote Connection
-// mongoose.connect(
-//   databaseURL,
-//   { useNewUrlParser: true },
-//   err => {
-//     if (err) {
-//       console.log("Error: " + err);
-//     } else {
-//       console.log("Connected to mogo db");
-//     }
-//   }
-// );
-// mongoose.Promise = global.Promise;
-// var store = new MongoDBStore({
-//   uri: databaseURL,
-//   collection: "mySessions"
-// });
+mongoose.connect(
+  databaseURL,
+  { useNewUrlParser: true },
+  err => {
+    if (err) {
+      console.log("Error: " + err);
+    } else {
+      console.log("Connected to mogo db");
+    }
+  }
+);
+mongoose.Promise = global.Promise;
+var store = new MongoDBStore({
+  uri: databaseURL,
+  collection: "mySessions"
+});
 
-// store.on("connected", function() {
-//   store.client; // The underlying MongoClient object from the MongoDB driver
-// });
-// // Catch errors
-// store.on("error", function(error) {
-//   // assert.ifError(error);
-//   // assert.ok(false);
-//   if (error) throw error;
-// });
+store.on("connected", function() {
+  store.client; // The underlying MongoClient object from the MongoDB driver
+});
+// Catch errors
+store.on("error", function(error) {
+  // assert.ifError(error);
+  // assert.ok(false);
+  if (error) throw error;
+});
 
 //Setup the express Application
 const app = express();
@@ -107,7 +84,7 @@ app.use(
     secret: "some_random_generated_const_string",
     resave: true,
     saveUninitialized: true,
-    // store: store
+    store: store
   })
 );
 
@@ -187,3 +164,14 @@ app.use("/", (req, res, next) => {
 app.listen(PORT, HOST, () => {
   console.log(`Serving nodeJs server via port: ${PORT}`);
 });
+
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const msg = {
+  to: 'pienry3g@gmail.com',
+  from: 'hello@bewla.com',
+  subject: 'Sending with SendGrid is Fun',
+  text: 'and easy to do anywhere, even with Node.js',
+  html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+};
+sgMail.send(msg);
