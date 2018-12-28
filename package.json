@@ -1,6 +1,9 @@
 {
   "name": "bewla_web_server",
   "version": "1.0.0",
+  "engines": {
+    "node": "11.1.0"
+  },
   "description": "This is the Bewla web server for Admins as well as the API for the native/React App",
   "main": "server.js",
   "scripts": {
