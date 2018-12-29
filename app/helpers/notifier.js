@@ -1,10 +1,10 @@
 const admin = require("firebase-admin");
 
-const serviceAccount = require("../../config/bewla-database-firebase-adminsdk-03v3f-ad1cfbba9e.json");
+const serviceAccount = require("../../config/bewla-a5988-firebase-adminsdk-h1r17-d66efec786.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://bewla-database.firebaseio.com"
+  databaseURL: "https://bewla-a5988.firebaseio.com"
 });
 
 const notifier = {
